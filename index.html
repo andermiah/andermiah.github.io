@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Live Captions</title>
   <style>
     @keyframes gradientShift {
@@ -38,9 +38,13 @@
       font-family: Arial, sans-serif;
 
       /* Gradient setup - creates a large gradient */
-      background: linear-gradient(45deg, #1a1a2e, #16213e, #0f3460, #533483);
+      background: linear-gradient(45deg,
+          #1a1a2e,
+          #16213e,
+          #0f3460,
+          #533483);
       background-size: 400% 400%;
-      animation: gradientShift 30s ease infinite
+      animation: gradientShift 30s ease infinite;
     }
 
     #captions {
@@ -50,547 +54,1339 @@
       padding: 20px;
       max-width: 80%;
     }
+
+    #flappyCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1000;
+      background: rgba(135, 206, 235, 1);
+      cursor: pointer;
+    }
+
+    #dinoCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1000;
+      background: #f7f7f7;
+      cursor: pointer;
+    }
   </style>
 </head>
 
 <body>
-  <div id="captions" style="  color: white;
-  font-size: 3rem;
-  text-align: center;
-  padding: 20px;
-  max-width: 80%;"></div>
+  <div id="captions" style="
+                color: white;
+                font-size: 3rem;
+                text-align: center;
+                padding: 20px;
+                max-width: 80%;
+            "></div>
+
+  <!-- Flappy Bird Easter Egg Canvas -->
+  <canvas id="flappyCanvas" style="display: none"></canvas>
+
+  <!-- Dino Run Easter Egg Canvas -->
+  <canvas id="dinoCanvas" style="display: none"></canvas>
+
   <script>
     const SpeechRecognition = window.webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
-    const captionsDiv = document.getElementById('captions');
+    const captionsDiv = document.getElementById("captions");
 
-    const cussWords = ['fuck', 'shit', 'bitch', 'piss', 'ass', 'cunt', 'pussy', 'faggot', 'dike', 'fag', 'asshole', 'jackass', 'dick', 'nigger', 'nigga', 'motherfucker', 'bullshit', 'cock', 'dumbass', 'hell', 'whore', 'fagot'];
-    const randomMonkey = ['🙊', '🙉', '🙈'];
+    const cussWords = [
+      "fuck",
+      "shit",
+      "bitch",
+      "piss",
+      "ass",
+      "cunt",
+      "pussy",
+      "faggot",
+      "dike",
+      "fag",
+      "asshole",
+      "jackass",
+      "dick",
+      "nigger",
+      "nigga",
+      "motherfucker",
+      "bullshit",
+      "cock",
+      "dumbass",
+      "hell",
+      "whore",
+      "fagot",
+    ];
+    const randomMonkey = ["🙊", "🙉", "🙈"];
+
+    // ========== FLAPPY BIRD EASTER EGG ==========
+    const flappyCanvas = document.getElementById("flappyCanvas");
+    const flappyCtx = flappyCanvas.getContext("2d");
+    let flappyGameActive = false;
+    let flappyAnimationId = null;
+    let lastGameCommand = "";
+
+    // Set canvas size to fullscreen
+    function resizeFlappyCanvas() {
+      flappyCanvas.width = window.innerWidth;
+      flappyCanvas.height = window.innerHeight;
+    }
+    resizeFlappyCanvas();
+
+    // Game state
+    const flappyGame = {
+      bird: {
+        x: 100,
+        y: window.innerHeight / 2,
+        radius: 15,
+        velocity: 0,
+        gravity: 0.3,
+        jumpStrength: -7,
+      },
+      pipes: [],
+      score: 0,
+      frameCount: 0,
+      pipeGap: 250,
+      pipeWidth: 60,
+      pipeSpeed: 2,
+    };
+
+    function resetFlappyGame() {
+      flappyGame.bird.y = window.innerHeight / 2;
+      flappyGame.bird.velocity = 0;
+      flappyGame.pipes = [];
+      flappyGame.score = 0;
+      flappyGame.frameCount = 0;
+    }
+
+    function drawBird() {
+      flappyCtx.fillStyle = "#FFD700";
+      flappyCtx.beginPath();
+      flappyCtx.arc(
+        flappyGame.bird.x,
+        flappyGame.bird.y,
+        flappyGame.bird.radius,
+        0,
+        Math.PI * 2,
+      );
+      flappyCtx.fill();
+
+      // Bird eye
+      flappyCtx.fillStyle = "#000";
+      flappyCtx.beginPath();
+      flappyCtx.arc(
+        flappyGame.bird.x + 5,
+        flappyGame.bird.y - 3,
+        3,
+        0,
+        Math.PI * 2,
+      );
+      flappyCtx.fill();
+    }
+
+    function generatePipe() {
+      const minHeight = 50;
+      const maxHeight = flappyCanvas.height - flappyGame.pipeGap - 50;
+      const topHeight =
+        Math.random() * (maxHeight - minHeight) + minHeight;
+
+      flappyGame.pipes.push({
+        x: flappyCanvas.width,
+        topHeight: topHeight,
+        scored: false,
+      });
+    }
+
+    function drawPipes() {
+      flappyCtx.fillStyle = "#228B22";
+      flappyGame.pipes.forEach((pipe) => {
+        // Top pipe
+        flappyCtx.fillRect(
+          pipe.x,
+          0,
+          flappyGame.pipeWidth,
+          pipe.topHeight,
+        );
+        // Bottom pipe
+        flappyCtx.fillRect(
+          pipe.x,
+          pipe.topHeight + flappyGame.pipeGap,
+          flappyGame.pipeWidth,
+          flappyCanvas.height,
+        );
+
+        // Pipe borders
+        flappyCtx.strokeStyle = "#1a6b1a";
+        flappyCtx.lineWidth = 3;
+        flappyCtx.strokeRect(
+          pipe.x,
+          0,
+          flappyGame.pipeWidth,
+          pipe.topHeight,
+        );
+        flappyCtx.strokeRect(
+          pipe.x,
+          pipe.topHeight + flappyGame.pipeGap,
+          flappyGame.pipeWidth,
+          flappyCanvas.height,
+        );
+      });
+    }
+
+    function updatePipes() {
+      // Move pipes
+      flappyGame.pipes.forEach((pipe, index) => {
+        pipe.x -= flappyGame.pipeSpeed;
+
+        // Score when bird passes pipe
+        if (
+          !pipe.scored &&
+          pipe.x + flappyGame.pipeWidth < flappyGame.bird.x
+        ) {
+          pipe.scored = true;
+          flappyGame.score++;
+        }
+
+        // Remove off-screen pipes
+        if (pipe.x + flappyGame.pipeWidth < 0) {
+          flappyGame.pipes.splice(index, 1);
+        }
+      });
+
+      // Generate new pipes
+      flappyGame.frameCount++;
+      if (flappyGame.frameCount % 180 === 0) {
+        generatePipe();
+      }
+    }
+
+    function updateBird() {
+      flappyGame.bird.velocity += flappyGame.bird.gravity;
+      flappyGame.bird.y += flappyGame.bird.velocity;
+    }
+
+    function checkCollision() {
+      const bird = flappyGame.bird;
+
+      // Ground/ceiling collision
+      if (
+        bird.y + bird.radius > flappyCanvas.height ||
+        bird.y - bird.radius < 0
+      ) {
+        return true;
+      }
+
+      // Pipe collision
+      for (let pipe of flappyGame.pipes) {
+        if (
+          bird.x + bird.radius > pipe.x &&
+          bird.x - bird.radius < pipe.x + flappyGame.pipeWidth
+        ) {
+          if (
+            bird.y - bird.radius < pipe.topHeight ||
+            bird.y + bird.radius >
+            pipe.topHeight + flappyGame.pipeGap
+          ) {
+            return true;
+          }
+        }
+      }
+
+      return false;
+    }
+
+    function drawScore() {
+      flappyCtx.fillStyle = "#FFF";
+      flappyCtx.font = "bold 40px Arial";
+      flappyCtx.textAlign = "center";
+      flappyCtx.fillText(
+        flappyGame.score,
+        flappyCanvas.width / 2,
+        60,
+      );
+    }
+
+    function flappyGameLoop() {
+      if (!flappyGameActive) return;
+
+      // Clear canvas
+      flappyCtx.fillStyle = "#87CEEB";
+      flappyCtx.fillRect(
+        0,
+        0,
+        flappyCanvas.width,
+        flappyCanvas.height,
+      );
+
+      // Update
+      updateBird();
+      updatePipes();
+
+      // Draw
+      drawPipes();
+      drawBird();
+      drawScore();
+
+      // Check collision
+      if (checkCollision()) {
+        endFlappyGame();
+        return;
+      }
+
+      flappyAnimationId = requestAnimationFrame(flappyGameLoop);
+    }
+
+    function birdJump() {
+      if (flappyGameActive) {
+        flappyGame.bird.velocity = flappyGame.bird.jumpStrength;
+      }
+    }
+
+    function drawCountdown(count) {
+      // Draw grayed out game background
+      flappyCtx.fillStyle = "#87CEEB";
+      flappyCtx.fillRect(
+        0,
+        0,
+        flappyCanvas.width,
+        flappyCanvas.height,
+      );
+
+      // Draw bird and pipes in grayed out state
+      flappyCtx.globalAlpha = 0.3;
+      drawBird();
+      if (flappyGame.pipes.length === 0) {
+        // Generate first pipe for preview
+        generatePipe();
+      }
+      drawPipes();
+      flappyCtx.globalAlpha = 1.0;
+
+      // Draw countdown number
+      flappyCtx.fillStyle = "#FFF";
+      flappyCtx.strokeStyle = "#000";
+      flappyCtx.lineWidth = 4;
+      flappyCtx.font = "bold 120px Arial";
+      flappyCtx.textAlign = "center";
+
+      // Draw text with outline
+      flappyCtx.strokeText(
+        count,
+        flappyCanvas.width / 2,
+        flappyCanvas.height / 2 + 40,
+      );
+      flappyCtx.fillText(
+        count,
+        flappyCanvas.width / 2,
+        flappyCanvas.height / 2 + 40,
+      );
+
+      // Draw "Get Ready!" text
+      flappyCtx.font = "bold 36px Arial";
+      flappyCtx.strokeStyle = "#000";
+      flappyCtx.lineWidth = 3;
+      flappyCtx.strokeText(
+        "GET READY!",
+        flappyCanvas.width / 2,
+        flappyCanvas.height / 2 - 80,
+      );
+      flappyCtx.fillText(
+        "GET READY!",
+        flappyCanvas.width / 2,
+        flappyCanvas.height / 2 - 80,
+      );
+    }
+
+    function startCountdown() {
+      let count = 3;
+
+      function countdown() {
+        if (count > 0) {
+          drawCountdown(count);
+          count--;
+          setTimeout(countdown, 1000);
+        } else {
+          // Countdown finished, start game
+          flappyGameActive = true;
+          flappyGameLoop();
+        }
+      }
+
+      countdown();
+    }
+
+    function startFlappyBird() {
+      console.log("Starting Flappy Bird game!");
+      // Stop any existing game loop first
+      flappyGameActive = false;
+      cancelAnimationFrame(flappyAnimationId);
+
+      resizeFlappyCanvas(); // Ensure canvas is fullscreen
+      resetFlappyGame();
+      flappyCanvas.style.display = "block";
+      startCountdown();
+    }
+
+    function endFlappyGame() {
+      flappyGameActive = false;
+      cancelAnimationFrame(flappyAnimationId);
+      console.log(`Game Over! Final Score: ${flappyGame.score}`);
+      closeFlappyGame();
+    }
+
+    function closeFlappyGame() {
+      flappyCanvas.style.display = "none";
+      cancelAnimationFrame(flappyAnimationId);
+      console.log("Flappy Bird game closed. Returning to captions.");
+    }
+
+    // Event listeners for Flappy Bird
+    flappyCanvas.addEventListener("click", (e) => {
+      if (flappyGameActive) {
+        birdJump();
+      }
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (
+        e.code === "Space" &&
+        flappyCanvas.style.display === "block"
+      ) {
+        e.preventDefault();
+        if (flappyGameActive) {
+          birdJump();
+        }
+      }
+    });
+
+    // ========== END FLAPPY BIRD EASTER EGG ==========
+
+    // ========== DINO RUN EASTER EGG ==========
+    const dinoCanvas = document.getElementById("dinoCanvas");
+    const dinoCtx = dinoCanvas.getContext("2d");
+    let dinoGameActive = false;
+    let dinoAnimationId = null;
+    let lastDinoCommand = "";
+
+    // Set canvas size to fullscreen
+    function resizeDinoCanvas() {
+      dinoCanvas.width = window.innerWidth;
+      dinoCanvas.height = window.innerHeight;
+    }
+    resizeDinoCanvas();
+
+    // Game state
+    const dinoGame = {
+      dino: {
+        x: 100,
+        y: window.innerHeight - 150, // Ground level
+        width: 40,
+        height: 50,
+        velocityY: 0,
+        gravity: 0.6,
+        jumpPower: -15,
+        isJumping: false,
+      },
+      obstacles: [],
+      score: 0,
+      frameCount: 0,
+      gameSpeed: 8,
+      groundY: window.innerHeight - 100,
+      nextObstacleFrame: 100, // When to spawn next obstacle
+    };
+
+    function resetDinoGame() {
+      dinoGame.dino.y = dinoGame.groundY - dinoGame.dino.height;
+      dinoGame.dino.velocityY = 0;
+      dinoGame.dino.isJumping = false;
+      dinoGame.obstacles = [];
+      dinoGame.score = 0;
+      dinoGame.frameCount = 0;
+      dinoGame.gameSpeed = 8;
+      dinoGame.nextObstacleFrame = 100;
+    }
+
+    function drawGround() {
+      dinoCtx.fillStyle = "#535353";
+      dinoCtx.fillRect(0, dinoGame.groundY, dinoCanvas.width, 2);
+    }
+
+    function drawDino() {
+      dinoCtx.fillStyle = "#535353";
+      dinoCtx.fillRect(
+        dinoGame.dino.x,
+        dinoGame.dino.y,
+        dinoGame.dino.width,
+        dinoGame.dino.height,
+      );
+    }
+
+    function drawObstacles() {
+      dinoGame.obstacles.forEach((obstacle) => {
+        if (obstacle.type === "bird") {
+          // Draw bird as a triangle/chevron shape
+          dinoCtx.fillStyle = "#535353";
+          dinoCtx.beginPath();
+          dinoCtx.moveTo(obstacle.x, obstacle.y + obstacle.height / 2);
+          dinoCtx.lineTo(
+            obstacle.x + obstacle.width / 2,
+            obstacle.y,
+          );
+          dinoCtx.lineTo(
+            obstacle.x + obstacle.width,
+            obstacle.y + obstacle.height / 2,
+          );
+          dinoCtx.lineTo(
+            obstacle.x + obstacle.width / 2,
+            obstacle.y + obstacle.height,
+          );
+          dinoCtx.closePath();
+          dinoCtx.fill();
+        } else {
+          // Draw cactus as rectangle
+          dinoCtx.fillStyle = "#535353";
+          dinoCtx.fillRect(
+            obstacle.x,
+            obstacle.y,
+            obstacle.width,
+            obstacle.height,
+          );
+        }
+      });
+    }
+
+    function generateObstacle() {
+      // Randomly choose between cactus (ground) or bird (flying)
+      const isBird = Math.random() > 0.5;
+
+      if (isBird) {
+        // Bird: flies at different heights
+        const birdHeights = [
+          dinoGame.groundY - 100, // Low
+          dinoGame.groundY - 150, // Medium
+          dinoGame.groundY - 200, // High
+        ];
+        const randomHeight =
+          birdHeights[
+          Math.floor(Math.random() * birdHeights.length)
+          ];
+
+        dinoGame.obstacles.push({
+          type: "bird",
+          x: dinoCanvas.width,
+          y: randomHeight,
+          width: 40,
+          height: 30,
+        });
+      } else {
+        // Cactus: on the ground
+        const height = 30 + Math.random() * 20;
+        dinoGame.obstacles.push({
+          type: "cactus",
+          x: dinoCanvas.width,
+          y: dinoGame.groundY - height,
+          width: 20,
+          height: height,
+        });
+      }
+    }
+
+    function updateObstacles() {
+      // Move obstacles
+      dinoGame.obstacles.forEach((obstacle, index) => {
+        obstacle.x -= dinoGame.gameSpeed;
+
+        // Remove off-screen obstacles and increase score
+        if (obstacle.x + obstacle.width < 0) {
+          dinoGame.obstacles.splice(index, 1);
+          dinoGame.score++;
+        }
+      });
+
+      // Generate new obstacles with random timing
+      dinoGame.frameCount++;
+
+      if (dinoGame.frameCount >= dinoGame.nextObstacleFrame) {
+        generateObstacle();
+        dinoGame.nextObstacleFrame = dinoGame.frameCount + Math.floor(Math.random() * 100 + 30);
+      }
+
+      // Increase speed over time
+      if (dinoGame.frameCount % 500 === 0) {
+        dinoGame.gameSpeed += 0.5;
+      }
+    }
+
+    function updateDino() {
+      dinoGame.dino.velocityY += dinoGame.dino.gravity;
+      dinoGame.dino.y += dinoGame.dino.velocityY;
+      if (
+        dinoGame.dino.y + dinoGame.dino.height >=
+        dinoGame.groundY
+      ) {
+        dinoGame.dino.isJumping = false;
+        dinoGame.dino.y = dinoGame.groundY - dinoGame.dino.height;
+        dinoGame.dino.velocityY = 0;
+      }
+    }
+
+    function checkDinoCollision() {
+      for (let obstacle of dinoGame.obstacles) {
+        if (
+          obstacle.x < dinoGame.dino.x + dinoGame.dino.width &&
+          obstacle.x + obstacle.width > dinoGame.dino.x &&
+          obstacle.y < dinoGame.dino.y + dinoGame.dino.height &&
+          obstacle.y + obstacle.height > dinoGame.dino.y
+        ) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    function drawDinoScore() {
+      dinoCtx.fillStyle = "#535353";
+      dinoCtx.font = "bold 24px monospace";
+      dinoCtx.textAlign = "right";
+      dinoCtx.fillText(
+        `SCORE: ${dinoGame.score}`,
+        dinoCanvas.width - 20,
+        40,
+      );
+    }
+
+    function dinoGameLoop() {
+      if (!dinoGameActive) return;
+
+      // Clear canvas
+      dinoCtx.fillStyle = "#f7f7f7";
+      dinoCtx.fillRect(0, 0, dinoCanvas.width, dinoCanvas.height);
+
+      // Update
+      updateDino();
+      updateObstacles();
+
+      // Draw
+      drawGround();
+      drawDino();
+      drawObstacles();
+      drawDinoScore();
+
+      // Check collision
+      if (checkDinoCollision()) {
+        endDinoGame();
+        return;
+      }
+
+      dinoAnimationId = requestAnimationFrame(dinoGameLoop);
+    }
+
+    function dinoJump() {
+      if (dinoGameActive && !dinoGame.dino.isJumping) {
+        dinoGame.dino.velocityY = dinoGame.dino.jumpPower;
+        dinoGame.dino.isJumping = true;
+      }
+    }
+
+    function drawDinoCountdown(count) {
+      // Draw grayed out game background
+      dinoCtx.fillStyle = "#f7f7f7";
+      dinoCtx.fillRect(0, 0, dinoCanvas.width, dinoCanvas.height);
+
+      // Draw game elements in grayed out state
+      dinoCtx.globalAlpha = 0.3;
+      drawGround();
+      drawDino();
+      if (dinoGame.obstacles.length === 0) {
+        generateObstacle();
+      }
+      drawObstacles();
+      dinoCtx.globalAlpha = 1.0;
+
+      // Draw countdown number
+      dinoCtx.fillStyle = "#535353";
+      dinoCtx.font = "bold 120px Arial";
+      dinoCtx.textAlign = "center";
+      dinoCtx.fillText(
+        count,
+        dinoCanvas.width / 2,
+        dinoCanvas.height / 2 + 40,
+      );
+
+      // Draw "Get Ready!" text
+      dinoCtx.font = "bold 36px Arial";
+      dinoCtx.fillText(
+        "GET READY!",
+        dinoCanvas.width / 2,
+        dinoCanvas.height / 2 - 80,
+      );
+    }
+
+    function startDinoCountdown() {
+      let count = 3;
+
+      function countdown() {
+        if (count > 0) {
+          drawDinoCountdown(count);
+          count--;
+          setTimeout(countdown, 1000);
+        } else {
+          dinoGameActive = true;
+          dinoGameLoop();
+        }
+      }
+
+      countdown();
+    }
+
+    function startDinoRun() {
+      console.log("Starting Dino Run game!");
+      // Stop any existing game loop first
+      dinoGameActive = false;
+      cancelAnimationFrame(dinoAnimationId);
+
+      resizeDinoCanvas();
+      resetDinoGame();
+      dinoCanvas.style.display = "block";
+      startDinoCountdown();
+    }
+
+    function endDinoGame() {
+      dinoGameActive = false;
+      cancelAnimationFrame(dinoAnimationId);
+      console.log(`Game Over! Final Score: ${dinoGame.score}`);
+      closeDinoGame();
+    }
+
+    function closeDinoGame() {
+      dinoCanvas.style.display = "none";
+      cancelAnimationFrame(dinoAnimationId);
+      console.log("Dino Run game closed. Returning to captions.");
+    }
+
+    // Event listeners for Dino Run
+    dinoCanvas.addEventListener("click", (e) => {
+      if (dinoGameActive) {
+        dinoJump();
+      }
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (
+        e.code === "Space" &&
+        dinoCanvas.style.display === "block"
+      ) {
+        e.preventDefault();
+        if (dinoGameActive) {
+          dinoJump();
+        }
+      }
+    });
+
+    // ========== END DINO RUN EASTER EGG ==========
 
     // GLOOMY PALETTES - dark, moody aesthetic (all 140 CSS named colors)
     const gloomyPalettes = {
-      aliceblue: ['#1a2428', '#243138', '#2e3e48', '#384b58'],
-      antiquewhite: ['#3d3328', '#4d4338', '#5d5348', '#6d6358'],
-      aqua: ['#0a2e2e', '#1a4a4a', '#2a6666', '#3a8282'],
-      aquamarine: ['#1a3d30', '#2a5d40', '#3a7d50', '#4a9d60'],
-      azure: ['#1a2e3d', '#2a4a5d', '#3a667d', '#4a829d'],
-      beige: ['#3d3d2e', '#5d5d4a', '#7d7d66', '#9d9d82'],
-      bisque: ['#3d2e1a', '#5d4a2a', '#7d663a', '#9d824a'],
-      black: ['#000000', '#0a0a0a', '#1a1a1a', '#2a2a2a'],
-      blanchedalmond: ['#3d3520', '#5d5530', '#7d7540', '#9d9550'],
-      blue: ['#1a1a2e', '#16213e', '#0f3460', '#533483'],
-      blueviolet: ['#1a0a3d', '#2a1a5d', '#3a2a7d', '#4a3a9d'],
-      brown: ['#2e1a0a', '#4a2f1a', '#66442a', '#82593a'],
-      burlywood: ['#3d3020', '#5d4830', '#7d6040', '#9d7850'],
-      cadetblue: ['#1a2e3d', '#2a4a5d', '#3a667d', '#4a829d'],
-      chartreuse: ['#2e3d0a', '#4a5d1a', '#667d2a', '#829d3a'],
-      chocolate: ['#2e1a0a', '#4a2a1a', '#663a2a', '#824a3a'],
-      coral: ['#3d1a0a', '#5d2e1a', '#7d422a', '#9d563a'],
-      cornflowerblue: ['#1a2e4a', '#2a4a6b', '#3a668b', '#4a82aa'],
-      cornsilk: ['#3d3d28', '#5d5d38', '#7d7d48', '#9d9d58'],
-      crimson: ['#2e0a0a', '#4a1616', '#661a1a', '#822626'],
-      cyan: ['#0a2e2e', '#1a4a4a', '#2a6666', '#3a8282'],
-      darkblue: ['#0a0a1a', '#16162e', '#222242', '#2e2e56'],
-      darkcyan: ['#0a2e2e', '#1a4a4a', '#2a6666', '#3a8282'],
-      darkgoldenrod: ['#3d2e0a', '#5d4a1a', '#7d662a', '#9d823a'],
-      darkgray: ['#2e2e2e', '#424242', '#565656', '#6a6a6a'],
-      darkgreen: ['#0a1a0a', '#162e16', '#224222', '#2e562e'],
-      darkgrey: ['#2e2e2e', '#424242', '#565656', '#6a6a6a'],
-      darkkhaki: ['#3d3820', '#5c5234', '#7a6c48', '#99865c'],
-      darkmagenta: ['#2e0a2e', '#4a1a4a', '#662a66', '#823a82'],
-      darkolivegreen: ['#2e2e0a', '#4a4a16', '#666622', '#82822e'],
-      darkorange: ['#3d1e0a', '#5c2e16', '#7a3e22', '#994e2e'],
-      darkorchid: ['#2e0a3d', '#4a1a5c', '#662a7a', '#823a99'],
-      darkred: ['#1a0000', '#2e0a0a', '#421414', '#561e1e'],
-      darksalmon: ['#3d2820', '#5c3c34', '#7a5048', '#99645c'],
-      darkseagreen: ['#2e3d2e', '#4a5c4a', '#667a66', '#829982'],
-      darkslateblue: ['#1a1a2e', '#2e2e4a', '#424266', '#565682'],
-      darkslategray: ['#0a1a1a', '#162e2e', '#224242', '#2e5656'],
-      darkslategrey: ['#0a1a1a', '#162e2e', '#224242', '#2e5656'],
-      darkturquoise: ['#0a2e3d', '#1a4a5c', '#2a667a', '#3a8299'],
-      darkviolet: ['#1a0a2e', '#2e1a4a', '#422a66', '#563a82'],
-      deeppink: ['#3d0a2e', '#5c1a4a', '#7a2a66', '#993a82'],
-      deepskyblue: ['#0a2e4a', '#1a4a6b', '#2a668b', '#3a82aa'],
-      dimgray: ['#1a1a1a', '#2e2e2e', '#424242', '#565656'],
-      dimgrey: ['#1a1a1a', '#2e2e2e', '#424242', '#565656'],
-      dodgerblue: ['#0a2e4a', '#1a4a6b', '#2a668b', '#3a82aa'],
-      firebrick: ['#2e0a0a', '#4a1616', '#661e1e', '#822828'],
-      floralwhite: ['#3d3d38', '#5d5d50', '#7d7d68', '#9d9d80'],
-      forestgreen: ['#0a1a0a', '#162e16', '#224222', '#2e562e'],
-      fuchsia: ['#3d0a3d', '#5c1a5c', '#7a2a7a', '#993a99'],
-      gainsboro: ['#3d3d3d', '#5c5c5c', '#7a7a7a', '#999999'],
-      ghostwhite: ['#3d3d3d', '#5d5d5d', '#7d7d7d', '#9d9d9d'],
-      gold: ['#4a3d1a', '#6b5c2b', '#8b7a3c', '#aa994d'],
-      goldenrod: ['#3d2e1a', '#5d4a2a', '#7d663a', '#9d824a'],
-      gray: ['#1a1a1a', '#2e2e2e', '#424242', '#565656'],
-      green: ['#0d2818', '#1a3d2e', '#275240', '#346856'],
-      greenyellow: ['#3d4a0a', '#5c6b16', '#7a8b22', '#99aa2e'],
-      grey: ['#1a1a1a', '#2e2e2e', '#424242', '#565656'],
-      honeydew: ['#2e3d2e', '#4a5c4a', '#667a66', '#829982'],
-      hotpink: ['#3d0a2e', '#5c1a4a', '#7a2a66', '#993a82'],
-      indianred: ['#3d1a1a', '#5c2e2e', '#7a4242', '#995656'],
-      indigo: ['#0a0a2e', '#1a1a4a', '#2a2a66', '#3a3a82'],
-      ivory: ['#3d3d30', '#5d5d48', '#7d7d60', '#9d9d78'],
-      khaki: ['#3d3a20', '#5c5634', '#7a7248', '#998e5c'],
-      lavender: ['#2e1a3d', '#4a2e5c', '#66427a', '#825699'],
-      lavenderblush: ['#3d2e38', '#5c4a50', '#7a6668', '#998280'],
-      lawngreen: ['#3d4a0a', '#5c6b16', '#7a8b22', '#99aa2e'],
-      lemonchiffon: ['#3d3d20', '#5d5d34', '#7d7d48', '#9d9d5c'],
-      lightblue: ['#2e3d4a', '#4a5c6b', '#667a8b', '#8299aa'],
-      lightcoral: ['#3d2020', '#5c3434', '#7a4848', '#995c5c'],
-      lightcyan: ['#2e3d3d', '#4a5c5c', '#667a7a', '#829999'],
-      lightgoldenrodyellow: ['#3d3d28', '#5d5d3c', '#7d7d50', '#9d9d64'],
-      lightgray: ['#3d3d3d', '#5c5c5c', '#7a7a7a', '#999999'],
-      lightgreen: ['#2e3d2e', '#4a5c4a', '#667a66', '#829982'],
-      lightgrey: ['#3d3d3d', '#5c5c5c', '#7a7a7a', '#999999'],
-      lightpink: ['#3d2e3d', '#5c4a5c', '#7a667a', '#998299'],
-      lightsalmon: ['#3d2c1a', '#5c4028', '#7a5436', '#996844'],
-      lightseagreen: ['#0a2e2e', '#1a4a4a', '#2a6666', '#3a8282'],
-      lightskyblue: ['#2e3d4a', '#4a5c6b', '#667a8b', '#8299aa'],
-      lightslategray: ['#1a2e3d', '#2e4a5c', '#42667a', '#568299'],
-      lightslategrey: ['#1a2e3d', '#2e4a5c', '#42667a', '#568299'],
-      lightsteelblue: ['#2e3d4a', '#4a5c6b', '#667a8b', '#8299aa'],
-      lightyellow: ['#3d3d28', '#5d5d3c', '#7d7d50', '#9d9d64'],
-      lime: ['#2e3d0a', '#4a5c16', '#667a22', '#82992e'],
-      limegreen: ['#1a2e0a', '#2e4a16', '#426622', '#56822e'],
-      linen: ['#3d3528', '#5d5338', '#7d7148', '#9d8f58'],
-      magenta: ['#3d0a3d', '#5c1a5c', '#7a2a7a', '#993a99'],
-      maroon: ['#2e0a0a', '#4a1a1a', '#662a2a', '#823a3a'],
-      mediumaquamarine: ['#1a3d2e', '#2e5c4a', '#427a66', '#569982'],
-      mediumblue: ['#0a0a2e', '#1a1a4a', '#2a2a66', '#3a3a82'],
-      mediumorchid: ['#3d1a3d', '#5c2e5c', '#7a427a', '#995699'],
-      mediumpurple: ['#2e1a3d', '#4a2e5c', '#66427a', '#823a99'],
-      mediumseagreen: ['#0a2e1a', '#164a2e', '#226642', '#2e8256'],
-      mediumslateblue: ['#1a1a3d', '#2e2e5c', '#42427a', '#565699'],
-      mediumspringgreen: ['#0a3d2e', '#1a5c4a', '#2a7a66', '#3a9982'],
-      mediumturquoise: ['#0a2e3d', '#1a4a5c', '#2a667a', '#3a8299'],
-      mediumvioletred: ['#3d0a2e', '#5c1a4a', '#7a2a66', '#993a82'],
-      midnightblue: ['#0a0a1a', '#16162e', '#222242', '#2e2e56'],
-      mintcream: ['#2e3d38', '#4a5c50', '#667a68', '#829980'],
-      mistyrose: ['#3d2e2e', '#5c4a4a', '#7a6666', '#998282'],
-      moccasin: ['#3d3020', '#5d4830', '#7d6040', '#9d7850'],
-      navajowhite: ['#3d3020', '#5d4830', '#7d6040', '#9d7850'],
-      navy: ['#0a0a1a', '#16162e', '#222242', '#2e2e56'],
-      oldlace: ['#3d3a30', '#5d5848', '#7d7660', '#9d9478'],
-      olive: ['#2e2e0a', '#4a4a1a', '#66662a', '#82823a'],
-      olivedrab: ['#2e2e0a', '#4a4a16', '#666622', '#82822e'],
-      orange: ['#3d1e0a', '#5d2e16', '#7d3e22', '#9d4e2e'],
-      orangered: ['#3d0a0a', '#5c1616', '#7a2222', '#992e2e'],
-      orchid: ['#3d1a3d', '#5c2e5c', '#7a427a', '#995699'],
-      palegoldenrod: ['#3d3a20', '#5d5834', '#7d7648', '#9d945c'],
-      palegreen: ['#2e3d2e', '#4a5c4a', '#667a66', '#829982'],
-      paleturquoise: ['#2e3d3d', '#4a5c5c', '#667a7a', '#829999'],
-      palevioletred: ['#3d1a2e', '#5c2e4a', '#7a4266', '#995682'],
-      papayawhip: ['#3d3828', '#5d5638', '#7d7448', '#9d9258'],
-      peachpuff: ['#3d2e1a', '#5d4a2e', '#7d6642', '#9d8256'],
-      peru: ['#3d2a1a', '#5c402e', '#7a5642', '#996c56'],
-      pink: ['#3d2030', '#5c3448', '#7a4860', '#995c78'],
-      plum: ['#2e0a2e', '#4a1a4a', '#662a66', '#823a82'],
-      powderblue: ['#2e3d4a', '#4a5c6b', '#667a8b', '#8299aa'],
-      purple: ['#1a0a2e', '#2d1b52', '#402c6b', '#533d85'],
-      red: ['#2b0000', '#4a0e0e', '#6b1a1a', '#8b2626'],
-      rosybrown: ['#3d2e2e', '#5c4a4a', '#7a6666', '#998282'],
-      royalblue: ['#0a1a3d', '#162e5c', '#22427a', '#2e5699'],
-      saddlebrown: ['#2e1a0a', '#4a2616', '#663222', '#823e2e'],
-      salmon: ['#3d2016', '#5c3424', '#7a4832', '#995c40'],
-      sandybrown: ['#3d2c1a', '#5c4028', '#7a5436', '#996844'],
-      seagreen: ['#0a2e1a', '#164a2e', '#226642', '#2e8256'],
-      seashell: ['#3d3830', '#5d5648', '#7d7460', '#9d9278'],
-      sienna: ['#3d1a0a', '#5c2616', '#7a3222', '#993e2e'],
-      silver: ['#2e2e3a', '#42425c', '#56567a', '#6a6a99'],
-      skyblue: ['#2e3d4a', '#4a5c6b', '#667a8b', '#8299aa'],
-      slateblue: ['#1a1a3d', '#2e2e5c', '#42427a', '#565699'],
-      slategray: ['#1a2e3d', '#2e4a5c', '#42667a', '#568299'],
-      slategrey: ['#1a2e3d', '#2e4a5c', '#42667a', '#568299'],
-      snow: ['#3d3d3d', '#5d5d5d', '#7d7d7d', '#9d9d9d'],
-      springgreen: ['#0a2e16', '#164a24', '#226632', '#2e8240'],
-      steelblue: ['#1a2e3d', '#2e4a5c', '#42667a', '#568299'],
-      tan: ['#3d2e1a', '#5c4a2e', '#7a6642', '#998256'],
-      teal: ['#0a2e2e', '#1a4a4a', '#2a6666', '#3a8282'],
-      thistle: ['#3d2e3d', '#5c4a5c', '#7a667a', '#998299'],
-      tomato: ['#3d1a0a', '#5c2616', '#7a3222', '#993e2e'],
-      turquoise: ['#0a2e2e', '#1a4a4a', '#2a6666', '#3a8282'],
-      violet: ['#2e0a2e', '#4a1a4a', '#662a66', '#823a82'],
-      wheat: ['#3d3020', '#5d4c34', '#7d6848', '#9d845c'],
-      white: ['#3d3d3d', '#5c5c5c', '#7a7a7a', '#999999'],
-      whitesmoke: ['#3d3d3d', '#5d5d5d', '#7d7d7d', '#9d9d9d'],
-      yellow: ['#3d3d0a', '#5c5c1a', '#7a7a2a', '#99993a'],
-      yellowgreen: ['#2e3d0a', '#4a5c16', '#667a22', '#82992e'],
-      rainbow: ['#ff0000', '#ff7f00', '#ffff00', '#00ff00', '#0000ff', '#4b0082', '#9400d3', '#ff0000', '#ff7f00', '#ffff00', '#00ff00', '#0000ff', '#4b0082', '#9400d3']
+      aliceblue: ["#1a2428", "#243138", "#2e3e48", "#384b58"],
+      antiquewhite: ["#3d3328", "#4d4338", "#5d5348", "#6d6358"],
+      aqua: ["#0a2e2e", "#1a4a4a", "#2a6666", "#3a8282"],
+      aquamarine: ["#1a3d30", "#2a5d40", "#3a7d50", "#4a9d60"],
+      azure: ["#1a2e3d", "#2a4a5d", "#3a667d", "#4a829d"],
+      beige: ["#3d3d2e", "#5d5d4a", "#7d7d66", "#9d9d82"],
+      bisque: ["#3d2e1a", "#5d4a2a", "#7d663a", "#9d824a"],
+      black: ["#000000", "#0a0a0a", "#1a1a1a", "#2a2a2a"],
+      blanchedalmond: ["#3d3520", "#5d5530", "#7d7540", "#9d9550"],
+      blue: ["#1a1a2e", "#16213e", "#0f3460", "#533483"],
+      blueviolet: ["#1a0a3d", "#2a1a5d", "#3a2a7d", "#4a3a9d"],
+      brown: ["#2e1a0a", "#4a2f1a", "#66442a", "#82593a"],
+      burlywood: ["#3d3020", "#5d4830", "#7d6040", "#9d7850"],
+      cadetblue: ["#1a2e3d", "#2a4a5d", "#3a667d", "#4a829d"],
+      chartreuse: ["#2e3d0a", "#4a5d1a", "#667d2a", "#829d3a"],
+      chocolate: ["#2e1a0a", "#4a2a1a", "#663a2a", "#824a3a"],
+      coral: ["#3d1a0a", "#5d2e1a", "#7d422a", "#9d563a"],
+      cornflowerblue: ["#1a2e4a", "#2a4a6b", "#3a668b", "#4a82aa"],
+      cornsilk: ["#3d3d28", "#5d5d38", "#7d7d48", "#9d9d58"],
+      crimson: ["#2e0a0a", "#4a1616", "#661a1a", "#822626"],
+      cyan: ["#0a2e2e", "#1a4a4a", "#2a6666", "#3a8282"],
+      darkblue: ["#0a0a1a", "#16162e", "#222242", "#2e2e56"],
+      darkcyan: ["#0a2e2e", "#1a4a4a", "#2a6666", "#3a8282"],
+      darkgoldenrod: ["#3d2e0a", "#5d4a1a", "#7d662a", "#9d823a"],
+      darkgray: ["#2e2e2e", "#424242", "#565656", "#6a6a6a"],
+      darkgreen: ["#0a1a0a", "#162e16", "#224222", "#2e562e"],
+      darkgrey: ["#2e2e2e", "#424242", "#565656", "#6a6a6a"],
+      darkkhaki: ["#3d3820", "#5c5234", "#7a6c48", "#99865c"],
+      darkmagenta: ["#2e0a2e", "#4a1a4a", "#662a66", "#823a82"],
+      darkolivegreen: ["#2e2e0a", "#4a4a16", "#666622", "#82822e"],
+      darkorange: ["#3d1e0a", "#5c2e16", "#7a3e22", "#994e2e"],
+      darkorchid: ["#2e0a3d", "#4a1a5c", "#662a7a", "#823a99"],
+      darkred: ["#1a0000", "#2e0a0a", "#421414", "#561e1e"],
+      darksalmon: ["#3d2820", "#5c3c34", "#7a5048", "#99645c"],
+      darkseagreen: ["#2e3d2e", "#4a5c4a", "#667a66", "#829982"],
+      darkslateblue: ["#1a1a2e", "#2e2e4a", "#424266", "#565682"],
+      darkslategray: ["#0a1a1a", "#162e2e", "#224242", "#2e5656"],
+      darkslategrey: ["#0a1a1a", "#162e2e", "#224242", "#2e5656"],
+      darkturquoise: ["#0a2e3d", "#1a4a5c", "#2a667a", "#3a8299"],
+      darkviolet: ["#1a0a2e", "#2e1a4a", "#422a66", "#563a82"],
+      deeppink: ["#3d0a2e", "#5c1a4a", "#7a2a66", "#993a82"],
+      deepskyblue: ["#0a2e4a", "#1a4a6b", "#2a668b", "#3a82aa"],
+      dimgray: ["#1a1a1a", "#2e2e2e", "#424242", "#565656"],
+      dimgrey: ["#1a1a1a", "#2e2e2e", "#424242", "#565656"],
+      dodgerblue: ["#0a2e4a", "#1a4a6b", "#2a668b", "#3a82aa"],
+      firebrick: ["#2e0a0a", "#4a1616", "#661e1e", "#822828"],
+      floralwhite: ["#3d3d38", "#5d5d50", "#7d7d68", "#9d9d80"],
+      forestgreen: ["#0a1a0a", "#162e16", "#224222", "#2e562e"],
+      fuchsia: ["#3d0a3d", "#5c1a5c", "#7a2a7a", "#993a99"],
+      gainsboro: ["#3d3d3d", "#5c5c5c", "#7a7a7a", "#999999"],
+      ghostwhite: ["#3d3d3d", "#5d5d5d", "#7d7d7d", "#9d9d9d"],
+      gold: ["#4a3d1a", "#6b5c2b", "#8b7a3c", "#aa994d"],
+      goldenrod: ["#3d2e1a", "#5d4a2a", "#7d663a", "#9d824a"],
+      gray: ["#1a1a1a", "#2e2e2e", "#424242", "#565656"],
+      green: ["#0d2818", "#1a3d2e", "#275240", "#346856"],
+      greenyellow: ["#3d4a0a", "#5c6b16", "#7a8b22", "#99aa2e"],
+      grey: ["#1a1a1a", "#2e2e2e", "#424242", "#565656"],
+      honeydew: ["#2e3d2e", "#4a5c4a", "#667a66", "#829982"],
+      hotpink: ["#3d0a2e", "#5c1a4a", "#7a2a66", "#993a82"],
+      indianred: ["#3d1a1a", "#5c2e2e", "#7a4242", "#995656"],
+      indigo: ["#0a0a2e", "#1a1a4a", "#2a2a66", "#3a3a82"],
+      ivory: ["#3d3d30", "#5d5d48", "#7d7d60", "#9d9d78"],
+      khaki: ["#3d3a20", "#5c5634", "#7a7248", "#998e5c"],
+      lavender: ["#2e1a3d", "#4a2e5c", "#66427a", "#825699"],
+      lavenderblush: ["#3d2e38", "#5c4a50", "#7a6668", "#998280"],
+      lawngreen: ["#3d4a0a", "#5c6b16", "#7a8b22", "#99aa2e"],
+      lemonchiffon: ["#3d3d20", "#5d5d34", "#7d7d48", "#9d9d5c"],
+      lightblue: ["#2e3d4a", "#4a5c6b", "#667a8b", "#8299aa"],
+      lightcoral: ["#3d2020", "#5c3434", "#7a4848", "#995c5c"],
+      lightcyan: ["#2e3d3d", "#4a5c5c", "#667a7a", "#829999"],
+      lightgoldenrodyellow: [
+        "#3d3d28",
+        "#5d5d3c",
+        "#7d7d50",
+        "#9d9d64",
+      ],
+      lightgray: ["#3d3d3d", "#5c5c5c", "#7a7a7a", "#999999"],
+      lightgreen: ["#2e3d2e", "#4a5c4a", "#667a66", "#829982"],
+      lightgrey: ["#3d3d3d", "#5c5c5c", "#7a7a7a", "#999999"],
+      lightpink: ["#3d2e3d", "#5c4a5c", "#7a667a", "#998299"],
+      lightsalmon: ["#3d2c1a", "#5c4028", "#7a5436", "#996844"],
+      lightseagreen: ["#0a2e2e", "#1a4a4a", "#2a6666", "#3a8282"],
+      lightskyblue: ["#2e3d4a", "#4a5c6b", "#667a8b", "#8299aa"],
+      lightslategray: ["#1a2e3d", "#2e4a5c", "#42667a", "#568299"],
+      lightslategrey: ["#1a2e3d", "#2e4a5c", "#42667a", "#568299"],
+      lightsteelblue: ["#2e3d4a", "#4a5c6b", "#667a8b", "#8299aa"],
+      lightyellow: ["#3d3d28", "#5d5d3c", "#7d7d50", "#9d9d64"],
+      lime: ["#2e3d0a", "#4a5c16", "#667a22", "#82992e"],
+      limegreen: ["#1a2e0a", "#2e4a16", "#426622", "#56822e"],
+      linen: ["#3d3528", "#5d5338", "#7d7148", "#9d8f58"],
+      magenta: ["#3d0a3d", "#5c1a5c", "#7a2a7a", "#993a99"],
+      maroon: ["#2e0a0a", "#4a1a1a", "#662a2a", "#823a3a"],
+      mediumaquamarine: ["#1a3d2e", "#2e5c4a", "#427a66", "#569982"],
+      mediumblue: ["#0a0a2e", "#1a1a4a", "#2a2a66", "#3a3a82"],
+      mediumorchid: ["#3d1a3d", "#5c2e5c", "#7a427a", "#995699"],
+      mediumpurple: ["#2e1a3d", "#4a2e5c", "#66427a", "#823a99"],
+      mediumseagreen: ["#0a2e1a", "#164a2e", "#226642", "#2e8256"],
+      mediumslateblue: ["#1a1a3d", "#2e2e5c", "#42427a", "#565699"],
+      mediumspringgreen: ["#0a3d2e", "#1a5c4a", "#2a7a66", "#3a9982"],
+      mediumturquoise: ["#0a2e3d", "#1a4a5c", "#2a667a", "#3a8299"],
+      mediumvioletred: ["#3d0a2e", "#5c1a4a", "#7a2a66", "#993a82"],
+      midnightblue: ["#0a0a1a", "#16162e", "#222242", "#2e2e56"],
+      mintcream: ["#2e3d38", "#4a5c50", "#667a68", "#829980"],
+      mistyrose: ["#3d2e2e", "#5c4a4a", "#7a6666", "#998282"],
+      moccasin: ["#3d3020", "#5d4830", "#7d6040", "#9d7850"],
+      navajowhite: ["#3d3020", "#5d4830", "#7d6040", "#9d7850"],
+      navy: ["#0a0a1a", "#16162e", "#222242", "#2e2e56"],
+      oldlace: ["#3d3a30", "#5d5848", "#7d7660", "#9d9478"],
+      olive: ["#2e2e0a", "#4a4a1a", "#66662a", "#82823a"],
+      olivedrab: ["#2e2e0a", "#4a4a16", "#666622", "#82822e"],
+      orange: ["#3d1e0a", "#5d2e16", "#7d3e22", "#9d4e2e"],
+      orangered: ["#3d0a0a", "#5c1616", "#7a2222", "#992e2e"],
+      orchid: ["#3d1a3d", "#5c2e5c", "#7a427a", "#995699"],
+      palegoldenrod: ["#3d3a20", "#5d5834", "#7d7648", "#9d945c"],
+      palegreen: ["#2e3d2e", "#4a5c4a", "#667a66", "#829982"],
+      paleturquoise: ["#2e3d3d", "#4a5c5c", "#667a7a", "#829999"],
+      palevioletred: ["#3d1a2e", "#5c2e4a", "#7a4266", "#995682"],
+      papayawhip: ["#3d3828", "#5d5638", "#7d7448", "#9d9258"],
+      peachpuff: ["#3d2e1a", "#5d4a2e", "#7d6642", "#9d8256"],
+      peru: ["#3d2a1a", "#5c402e", "#7a5642", "#996c56"],
+      pink: ["#3d2030", "#5c3448", "#7a4860", "#995c78"],
+      plum: ["#2e0a2e", "#4a1a4a", "#662a66", "#823a82"],
+      powderblue: ["#2e3d4a", "#4a5c6b", "#667a8b", "#8299aa"],
+      purple: ["#1a0a2e", "#2d1b52", "#402c6b", "#533d85"],
+      red: ["#2b0000", "#4a0e0e", "#6b1a1a", "#8b2626"],
+      rosybrown: ["#3d2e2e", "#5c4a4a", "#7a6666", "#998282"],
+      royalblue: ["#0a1a3d", "#162e5c", "#22427a", "#2e5699"],
+      saddlebrown: ["#2e1a0a", "#4a2616", "#663222", "#823e2e"],
+      salmon: ["#3d2016", "#5c3424", "#7a4832", "#995c40"],
+      sandybrown: ["#3d2c1a", "#5c4028", "#7a5436", "#996844"],
+      seagreen: ["#0a2e1a", "#164a2e", "#226642", "#2e8256"],
+      seashell: ["#3d3830", "#5d5648", "#7d7460", "#9d9278"],
+      sienna: ["#3d1a0a", "#5c2616", "#7a3222", "#993e2e"],
+      silver: ["#2e2e3a", "#42425c", "#56567a", "#6a6a99"],
+      skyblue: ["#2e3d4a", "#4a5c6b", "#667a8b", "#8299aa"],
+      slateblue: ["#1a1a3d", "#2e2e5c", "#42427a", "#565699"],
+      slategray: ["#1a2e3d", "#2e4a5c", "#42667a", "#568299"],
+      slategrey: ["#1a2e3d", "#2e4a5c", "#42667a", "#568299"],
+      snow: ["#3d3d3d", "#5d5d5d", "#7d7d7d", "#9d9d9d"],
+      springgreen: ["#0a2e16", "#164a24", "#226632", "#2e8240"],
+      steelblue: ["#1a2e3d", "#2e4a5c", "#42667a", "#568299"],
+      tan: ["#3d2e1a", "#5c4a2e", "#7a6642", "#998256"],
+      teal: ["#0a2e2e", "#1a4a4a", "#2a6666", "#3a8282"],
+      thistle: ["#3d2e3d", "#5c4a5c", "#7a667a", "#998299"],
+      tomato: ["#3d1a0a", "#5c2616", "#7a3222", "#993e2e"],
+      turquoise: ["#0a2e2e", "#1a4a4a", "#2a6666", "#3a8282"],
+      violet: ["#2e0a2e", "#4a1a4a", "#662a66", "#823a82"],
+      wheat: ["#3d3020", "#5d4c34", "#7d6848", "#9d845c"],
+      white: ["#3d3d3d", "#5c5c5c", "#7a7a7a", "#999999"],
+      whitesmoke: ["#3d3d3d", "#5d5d5d", "#7d7d7d", "#9d9d9d"],
+      yellow: ["#3d3d0a", "#5c5c1a", "#7a7a2a", "#99993a"],
+      yellowgreen: ["#2e3d0a", "#4a5c16", "#667a22", "#82992e"],
+      rainbow: [
+        "#ff0000",
+        "#ff7f00",
+        "#ffff00",
+        "#00ff00",
+        "#0000ff",
+        "#4b0082",
+        "#9400d3",
+        "#ff0000",
+        "#ff7f00",
+        "#ffff00",
+        "#00ff00",
+        "#0000ff",
+        "#4b0082",
+        "#9400d3",
+      ],
     };
 
     // PASTEL PALETTES - soft, medium-vibrancy aesthetic (all 140 CSS named colors)
     const pastelPalettes = {
-      aliceblue: ['#e8f4f8', '#edf7fa', '#f2fafc', '#f7fdfe'],
-      antiquewhite: ['#f5eadb', '#f7efe3', '#f9f4eb', '#fbf9f3'],
-      aqua: ['#a8e6e6', '#b5ebeb', '#c2f0f0', '#cff5f5'],
-      aquamarine: ['#b8e6d5', '#c5ebdd', '#d2f0e5', '#dff5ed'],
-      azure: ['#e8f4fc', '#edf7fd', '#f2fafd', '#f7fdfe'],
-      beige: ['#f0e8d0', '#f4ecd8', '#f8f0e0', '#fcf4e8'],
-      bisque: ['#f5d7b0', '#f7dfbc', '#f9e7c8', '#fbefd4'],
-      black: ['#606060', '#707070', '#808080', '#909090'],
-      blanchedalmond: ['#f5e6c8', '#f7ebcf', '#f9f0d6', '#fbf5dd'],
-      blue: ['#a8d8f0', '#b5e0f4', '#c2e8f8', '#cff0fc'],
-      blueviolet: ['#c8a8e6', '#d1b5eb', '#dac2f0', '#e3cff5'],
-      brown: ['#d4a574', '#ddb485', '#e6c396', '#efd2a7'],
-      burlywood: ['#e6c8a0', '#ebcfb3', '#f0d6c6', '#f5ddd9'],
-      cadetblue: ['#b8d8e6', '#c5e0eb', '#d2e8f0', '#dff0f5'],
-      chartreuse: ['#d8f0a8', '#e0f4b5', '#e8f8c2', '#f0fccf'],
-      chocolate: ['#d48850', '#dd9d69', '#e6b282', '#efc79b'],
-      coral: ['#ffb5a8', '#ffc4b5', '#ffd3c2', '#ffe2cf'],
-      cornflowerblue: ['#b8d0f0', '#c5d9f4', '#d2e2f8', '#dfebfc'],
-      cornsilk: ['#f5f0d0', '#f7f4d8', '#f9f8e0', '#fbfce8'],
-      crimson: ['#e8a0a0', '#ecb3b3', '#f0c6c6', '#f4d9d9'],
-      cyan: ['#a8e6e6', '#b5ebeb', '#c2f0f0', '#cff5f5'],
-      darkblue: ['#a0a0c8', '#b3b3d1', '#c6c6da', '#d9d9e3'],
-      darkcyan: ['#a8d8d8', '#b5e0e0', '#c2e8e8', '#cff0f0'],
-      darkgoldenrod: ['#d8b870', '#e0c489', '#e8d0a2', '#f0dcbb'],
-      darkgray: ['#c0c0c0', '#cacaca', '#d4d4d4', '#dedede'],
-      darkgreen: ['#a8c8a8', '#b5d1d1', '#c2dada', '#cfe3e3'],
-      darkgrey: ['#c0c0c0', '#cacaca', '#d4d4d4', '#dedede'],
-      darkkhaki: ['#d4c89a', '#ddd1ad', '#e6dac0', '#efe3d3'],
-      darkmagenta: ['#d8a8d8', '#e0b5e0', '#e8c2e8', '#f0cff0'],
-      darkolivegreen: ['#c8c8a0', '#d1d1b3', '#dadac6', '#e3e3d9'],
-      darkorange: ['#ffa870', '#ffba89', '#ffcca2', '#ffdebb'],
-      darkorchid: ['#d0a0e8', '#d9b3ec', '#e2c6f0', '#ebd9f4'],
-      darkred: ['#d8a0a0', '#e0b3b3', '#e8c6c6', '#f0d9d9'],
-      darksalmon: ['#f0b8a8', '#f4c4b5', '#f8d0c2', '#fcdccf'],
-      darkseagreen: ['#c8e6c8', '#d1ebd1', '#daf0da', '#e3f5e3'],
-      darkslateblue: ['#b8b8d8', '#c4c4e0', '#d0d0e8', '#dcdcf0'],
-      darkslategray: ['#a8c8c8', '#b5d1d1', '#c2dada', '#cfe3e3'],
-      darkslategrey: ['#a8c8c8', '#b5d1d1', '#c2dada', '#cfe3e3'],
-      darkturquoise: ['#a8d8e8', '#b5e0ec', '#c2e8f0', '#cff0f4'],
-      darkviolet: ['#c8a0e8', '#d1b3ec', '#dac6f0', '#e3d9f4'],
-      deeppink: ['#ffb3d8', '#ffc4e0', '#ffd5e8', '#ffe6f0'],
-      deepskyblue: ['#a8d0f0', '#b5d9f4', '#c2e2f8', '#cfebfc'],
-      dimgray: ['#b0b0b0', '#bcbcbc', '#c8c8c8', '#d4d4d4'],
-      dimgrey: ['#b0b0b0', '#bcbcbc', '#c8c8c8', '#d4d4d4'],
-      dodgerblue: ['#a8c8f0', '#b5d4f4', '#c2e0f8', '#cfecfc'],
-      firebrick: ['#d8a0a0', '#e0b3b3', '#e8c6c6', '#f0d9d9'],
-      floralwhite: ['#f5f5f0', '#f7f7f4', '#f9f9f8', '#fbfbfc'],
-      forestgreen: ['#a8c8a8', '#b5d1d1', '#c2dada', '#cfe3e3'],
-      fuchsia: ['#ffb5ff', '#ffc4ff', '#ffd3ff', '#ffe2ff'],
-      gainsboro: ['#e8e8e8', '#ececec', '#f0f0f0', '#f4f4f4'],
-      ghostwhite: ['#f0f0f5', '#f4f4f7', '#f8f8f9', '#fcfcfb'],
-      gold: ['#f4d77e', '#f7df92', '#fae7a6', '#fdefba'],
-      goldenrod: ['#e6c870', '#ebd489', '#f0e0a2', '#f5ecbb'],
-      gray: ['#c0c0c0', '#cacaca', '#d4d4d4', '#dedede'],
-      green: ['#b8e6b8', '#c5ebc5', '#d2f0d2', '#dff5df'],
-      greenyellow: ['#d8f0a8', '#e0f4b5', '#e8f8c2', '#f0fccf'],
-      grey: ['#c0c0c0', '#cacaca', '#d4d4d4', '#dedede'],
-      honeydew: ['#e8f5e8', '#ecf7ec', '#f0f9f0', '#f4fbf4'],
-      hotpink: ['#ffb5d8', '#ffc4e0', '#ffd3e8', '#ffe2f0'],
-      indianred: ['#e6b8b8', '#ebc4c4', '#f0d0d0', '#f5dcdc'],
-      indigo: ['#b8b8d8', '#c4c4e0', '#d0d0e8', '#dcdcf0'],
-      ivory: ['#f5f5e8', '#f7f7ec', '#f9f9f0', '#fbfbf4'],
-      khaki: ['#e6d8a8', '#ebe0b5', '#f0e8c2', '#f5f0cf'],
-      lavender: ['#d4c4e6', '#ddd1eb', '#e6def0', '#efebf5'],
-      lavenderblush: ['#f5e8f0', '#f7ecf4', '#f9f0f8', '#fbf4fc'],
-      lawngreen: ['#c8f0a8', '#d1f4b5', '#daf8c2', '#e3fccf'],
-      lemonchiffon: ['#f5f0b0', '#f7f4bc', '#f9f8c8', '#fbfcd4'],
-      lightblue: ['#c8e0f0', '#d1e6f4', '#daeaf8', '#e3f0fc'],
-      lightcoral: ['#f0b8b8', '#f4c4c4', '#f8d0d0', '#fcdcdc'],
-      lightcyan: ['#d8f0f0', '#e0f4f4', '#e8f8f8', '#f0fcfc'],
-      lightgoldenrodyellow: ['#f5f0c8', '#f7f4d1', '#f9f8da', '#fbfce3'],
-      lightgray: ['#e0e0e0', '#e6e6e6', '#ececec', '#f2f2f2'],
-      lightgreen: ['#c8e6c8', '#d1ebd1', '#daf0da', '#e3f5e3'],
-      lightgrey: ['#e0e0e0', '#e6e6e6', '#ececec', '#f2f2f2'],
-      lightpink: ['#ffb8d0', '#ffc4d8', '#ffd0e0', '#ffdce8'],
-      lightsalmon: ['#ffb898', '#ffc4a8', '#ffd0b8', '#ffdcc8'],
-      lightseagreen: ['#a8d8c8', '#b5e0d1', '#c2e8da', '#cff0e3'],
-      lightskyblue: ['#c8d8f0', '#d1e0f4', '#dae8f8', '#e3f0fc'],
-      lightslategray: ['#b8c8d8', '#c4d1e0', '#d0dae8', '#dce3f0'],
-      lightslategrey: ['#b8c8d8', '#c4d1e0', '#d0dae8', '#dce3f0'],
-      lightsteelblue: ['#c8d0e8', '#d1d9ec', '#dae2f0', '#e3ebf4'],
-      lightyellow: ['#f5f5c8', '#f7f7d1', '#f9f9da', '#fbfbe3'],
-      lime: ['#c8f0a8', '#d1f4b5', '#daf8c2', '#e3fccf'],
-      limegreen: ['#b8e6a8', '#c5ebb5', '#d2f0c2', '#dff5cf'],
-      linen: ['#f0e8d8', '#f4ece0', '#f8f0e8', '#fcf4f0'],
-      magenta: ['#ffb5ff', '#ffc4ff', '#ffd3ff', '#ffe2ff'],
-      maroon: ['#d8a8a8', '#e0b5b5', '#e8c2c2', '#f0cfcf'],
-      mediumaquamarine: ['#b8d8c8', '#c5e0d1', '#d2e8da', '#dff0e3'],
-      mediumblue: ['#a8a8e6', '#b5b5eb', '#c2c2f0', '#cfcff5'],
-      mediumorchid: ['#d0b8e6', '#d9c4eb', '#e2d0f0', '#ebdcf5'],
-      mediumpurple: ['#c8b8e6', '#d1c4eb', '#dad0f0', '#e3dcf5'],
-      mediumseagreen: ['#a8d8b8', '#b5e0c4', '#c2e8d0', '#cff0dc'],
-      mediumslateblue: ['#b8b8e6', '#c4c4eb', '#d0d0f0', '#dcdcf5'],
-      mediumspringgreen: ['#a8f0c8', '#b5f4d1', '#c2f8da', '#cffce3'],
-      mediumturquoise: ['#a8d8e6', '#b5e0eb', '#c2e8f0', '#cff0f5'],
-      mediumvioletred: ['#e6a8c8', '#ebb5d1', '#f0c2da', '#f5cfe3'],
-      midnightblue: ['#a0a0c8', '#b3b3d1', '#c6c6da', '#d9d9e3'],
-      mintcream: ['#e8f5f0', '#ecf7f4', '#f0f9f8', '#f4fbfc'],
-      mistyrose: ['#f5d8d8', '#f7e0e0', '#f9e8e8', '#fbf0f0'],
-      moccasin: ['#f5d8b0', '#f7e0bc', '#f9e8c8', '#fbf0d4'],
-      navajowhite: ['#f5d8b0', '#f7e0bc', '#f9e8c8', '#fbf0d4'],
-      navy: ['#a0a0c8', '#b3b3d1', '#c6c6da', '#d9d9e3'],
-      oldlace: ['#f0e8d8', '#f4ece0', '#f8f0e8', '#fcf4f0'],
-      olive: ['#c8c8a0', '#d1d1b3', '#dadac6', '#e3e3d9'],
-      olivedrab: ['#b8c090', '#c4ca9f', '#d0d4ae', '#dcdebd'],
-      orange: ['#ffb870', '#ffc489', '#ffd0a2', '#ffdcbb'],
-      orangered: ['#ffb090', '#ffbc9f', '#ffc8ae', '#ffd4bd'],
-      orchid: ['#e6b8e6', '#ebc4eb', '#f0d0f0', '#f5dcf5'],
-      palegoldenrod: ['#e8d8a8', '#ece0b5', '#f0e8c2', '#f4f0cf'],
-      palegreen: ['#c8e6c8', '#d1ebd1', '#daf0da', '#e3f5e3'],
-      paleturquoise: ['#c8e6e6', '#d1ebeb', '#daf0f0', '#e3f5f5'],
-      palevioletred: ['#e6b8c8', '#ebc4d1', '#f0d0da', '#f5dce3'],
-      papayawhip: ['#f5e8c8', '#f7ecd1', '#f9f0da', '#fbf4e3'],
-      peachpuff: ['#f5d0b0', '#f7d9bc', '#f9e2c8', '#fbebd4'],
-      peru: ['#d8b090', '#e0bc9f', '#e8c8ae', '#f0d4bd'],
-      pink: ['#ffc6d9', '#ffd1e1', '#ffdce9', '#ffe7f1'],
-      plum: ['#e0b8e0', '#e6c4e6', '#ecd0ec', '#f2dcf2'],
-      powderblue: ['#c8d8e6', '#d1e0eb', '#dae8f0', '#e3f0f5'],
-      purple: ['#d4b5f7', '#dcc4f9', '#e4d3fb', '#ece2fd'],
-      red: ['#ffb3ba', '#ffc4c9', '#ffd5d8', '#ffe6e7'],
-      rosybrown: ['#d8b8b8', '#e0c4c4', '#e8d0d0', '#f0dcdc'],
-      royalblue: ['#a8b8e6', '#b5c4eb', '#c2d0f0', '#cfdcf5'],
-      saddlebrown: ['#c88850', '#d19d69', '#dab282', '#e3c79b'],
-      salmon: ['#ffb098', '#ffbca8', '#ffc8b8', '#ffd4c8'],
-      sandybrown: ['#f0b870', '#f4c489', '#f8d0a2', '#fcdcbb'],
-      seagreen: ['#a8c8b8', '#b5d1c4', '#c2dad0', '#cfe3dc'],
-      seashell: ['#f5e8e0', '#f7ece6', '#f9f0ec', '#fbf4f2'],
-      sienna: ['#d88850', '#e09d69', '#e8b282', '#f0c79b'],
-      silver: ['#c9c9d9', '#d4d4e1', '#dfdfe9', '#eaeaf1'],
-      skyblue: ['#c8d8f0', '#d1e0f4', '#dae8f8', '#e3f0fc'],
-      slateblue: ['#b8b8e6', '#c4c4eb', '#d0d0f0', '#dcdcf5'],
-      slategray: ['#b8c8d8', '#c4d1e0', '#d0dae8', '#dce3f0'],
-      slategrey: ['#b8c8d8', '#c4d1e0', '#d0dae8', '#dce3f0'],
-      snow: ['#f5f0f0', '#f7f4f4', '#f9f8f8', '#fbfcfc'],
-      springgreen: ['#a8e6b8', '#b5ebc4', '#c2f0d0', '#cff5dc'],
-      steelblue: ['#a8c0d8', '#b5cae0', '#c2d4e8', '#cfdef0'],
-      tan: ['#d8b898', '#e0c4a8', '#e8d0b8', '#f0dcc8'],
-      teal: ['#a8d8d8', '#b5e0e0', '#c2e8e8', '#cff0f0'],
-      thistle: ['#d8c8d8', '#e0d1d1', '#e8dada', '#f0e3e3'],
-      tomato: ['#ffb890', '#ffc49f', '#ffd0ae', '#ffdcbd'],
-      turquoise: ['#a8d8e6', '#b5e0eb', '#c2e8f0', '#cff0f5'],
-      violet: ['#d8b8d8', '#e0c4c4', '#e8d0d0', '#f0dcdc'],
-      wheat: ['#e6d0a8', '#ebd9b5', '#f0e2c2', '#f5ebcf'],
-      white: ['#f0f0f0', '#f4f4f4', '#f8f8f8', '#fcfcfc'],
-      whitesmoke: ['#e8e8e8', '#ececec', '#f0f0f0', '#f4f4f4'],
-      yellow: ['#fff4b3', '#fff7c4', '#fffad5', '#fffde6'],
-      yellowgreen: ['#d0e6a8', '#d9ebb5', '#e2f0c2', '#ebf5cf'],
-      rainbow: ['#ff0000', '#ff7f00', '#ffff00', '#00ff00', '#0000ff', '#4b0082', '#9400d3', '#ff0000', '#ff7f00', '#ffff00', '#00ff00', '#0000ff', '#4b0082', '#9400d3']
+      aliceblue: ["#e8f4f8", "#edf7fa", "#f2fafc", "#f7fdfe"],
+      antiquewhite: ["#f5eadb", "#f7efe3", "#f9f4eb", "#fbf9f3"],
+      aqua: ["#a8e6e6", "#b5ebeb", "#c2f0f0", "#cff5f5"],
+      aquamarine: ["#b8e6d5", "#c5ebdd", "#d2f0e5", "#dff5ed"],
+      azure: ["#e8f4fc", "#edf7fd", "#f2fafd", "#f7fdfe"],
+      beige: ["#f0e8d0", "#f4ecd8", "#f8f0e0", "#fcf4e8"],
+      bisque: ["#f5d7b0", "#f7dfbc", "#f9e7c8", "#fbefd4"],
+      black: ["#606060", "#707070", "#808080", "#909090"],
+      blanchedalmond: ["#f5e6c8", "#f7ebcf", "#f9f0d6", "#fbf5dd"],
+      blue: ["#a8d8f0", "#b5e0f4", "#c2e8f8", "#cff0fc"],
+      blueviolet: ["#c8a8e6", "#d1b5eb", "#dac2f0", "#e3cff5"],
+      brown: ["#d4a574", "#ddb485", "#e6c396", "#efd2a7"],
+      burlywood: ["#e6c8a0", "#ebcfb3", "#f0d6c6", "#f5ddd9"],
+      cadetblue: ["#b8d8e6", "#c5e0eb", "#d2e8f0", "#dff0f5"],
+      chartreuse: ["#d8f0a8", "#e0f4b5", "#e8f8c2", "#f0fccf"],
+      chocolate: ["#d48850", "#dd9d69", "#e6b282", "#efc79b"],
+      coral: ["#ffb5a8", "#ffc4b5", "#ffd3c2", "#ffe2cf"],
+      cornflowerblue: ["#b8d0f0", "#c5d9f4", "#d2e2f8", "#dfebfc"],
+      cornsilk: ["#f5f0d0", "#f7f4d8", "#f9f8e0", "#fbfce8"],
+      crimson: ["#e8a0a0", "#ecb3b3", "#f0c6c6", "#f4d9d9"],
+      cyan: ["#a8e6e6", "#b5ebeb", "#c2f0f0", "#cff5f5"],
+      darkblue: ["#a0a0c8", "#b3b3d1", "#c6c6da", "#d9d9e3"],
+      darkcyan: ["#a8d8d8", "#b5e0e0", "#c2e8e8", "#cff0f0"],
+      darkgoldenrod: ["#d8b870", "#e0c489", "#e8d0a2", "#f0dcbb"],
+      darkgray: ["#c0c0c0", "#cacaca", "#d4d4d4", "#dedede"],
+      darkgreen: ["#a8c8a8", "#b5d1d1", "#c2dada", "#cfe3e3"],
+      darkgrey: ["#c0c0c0", "#cacaca", "#d4d4d4", "#dedede"],
+      darkkhaki: ["#d4c89a", "#ddd1ad", "#e6dac0", "#efe3d3"],
+      darkmagenta: ["#d8a8d8", "#e0b5e0", "#e8c2e8", "#f0cff0"],
+      darkolivegreen: ["#c8c8a0", "#d1d1b3", "#dadac6", "#e3e3d9"],
+      darkorange: ["#ffa870", "#ffba89", "#ffcca2", "#ffdebb"],
+      darkorchid: ["#d0a0e8", "#d9b3ec", "#e2c6f0", "#ebd9f4"],
+      darkred: ["#d8a0a0", "#e0b3b3", "#e8c6c6", "#f0d9d9"],
+      darksalmon: ["#f0b8a8", "#f4c4b5", "#f8d0c2", "#fcdccf"],
+      darkseagreen: ["#c8e6c8", "#d1ebd1", "#daf0da", "#e3f5e3"],
+      darkslateblue: ["#b8b8d8", "#c4c4e0", "#d0d0e8", "#dcdcf0"],
+      darkslategray: ["#a8c8c8", "#b5d1d1", "#c2dada", "#cfe3e3"],
+      darkslategrey: ["#a8c8c8", "#b5d1d1", "#c2dada", "#cfe3e3"],
+      darkturquoise: ["#a8d8e8", "#b5e0ec", "#c2e8f0", "#cff0f4"],
+      darkviolet: ["#c8a0e8", "#d1b3ec", "#dac6f0", "#e3d9f4"],
+      deeppink: ["#ffb3d8", "#ffc4e0", "#ffd5e8", "#ffe6f0"],
+      deepskyblue: ["#a8d0f0", "#b5d9f4", "#c2e2f8", "#cfebfc"],
+      dimgray: ["#b0b0b0", "#bcbcbc", "#c8c8c8", "#d4d4d4"],
+      dimgrey: ["#b0b0b0", "#bcbcbc", "#c8c8c8", "#d4d4d4"],
+      dodgerblue: ["#a8c8f0", "#b5d4f4", "#c2e0f8", "#cfecfc"],
+      firebrick: ["#d8a0a0", "#e0b3b3", "#e8c6c6", "#f0d9d9"],
+      floralwhite: ["#f5f5f0", "#f7f7f4", "#f9f9f8", "#fbfbfc"],
+      forestgreen: ["#a8c8a8", "#b5d1d1", "#c2dada", "#cfe3e3"],
+      fuchsia: ["#ffb5ff", "#ffc4ff", "#ffd3ff", "#ffe2ff"],
+      gainsboro: ["#e8e8e8", "#ececec", "#f0f0f0", "#f4f4f4"],
+      ghostwhite: ["#f0f0f5", "#f4f4f7", "#f8f8f9", "#fcfcfb"],
+      gold: ["#f4d77e", "#f7df92", "#fae7a6", "#fdefba"],
+      goldenrod: ["#e6c870", "#ebd489", "#f0e0a2", "#f5ecbb"],
+      gray: ["#c0c0c0", "#cacaca", "#d4d4d4", "#dedede"],
+      green: ["#b8e6b8", "#c5ebc5", "#d2f0d2", "#dff5df"],
+      greenyellow: ["#d8f0a8", "#e0f4b5", "#e8f8c2", "#f0fccf"],
+      grey: ["#c0c0c0", "#cacaca", "#d4d4d4", "#dedede"],
+      honeydew: ["#e8f5e8", "#ecf7ec", "#f0f9f0", "#f4fbf4"],
+      hotpink: ["#ffb5d8", "#ffc4e0", "#ffd3e8", "#ffe2f0"],
+      indianred: ["#e6b8b8", "#ebc4c4", "#f0d0d0", "#f5dcdc"],
+      indigo: ["#b8b8d8", "#c4c4e0", "#d0d0e8", "#dcdcf0"],
+      ivory: ["#f5f5e8", "#f7f7ec", "#f9f9f0", "#fbfbf4"],
+      khaki: ["#e6d8a8", "#ebe0b5", "#f0e8c2", "#f5f0cf"],
+      lavender: ["#d4c4e6", "#ddd1eb", "#e6def0", "#efebf5"],
+      lavenderblush: ["#f5e8f0", "#f7ecf4", "#f9f0f8", "#fbf4fc"],
+      lawngreen: ["#c8f0a8", "#d1f4b5", "#daf8c2", "#e3fccf"],
+      lemonchiffon: ["#f5f0b0", "#f7f4bc", "#f9f8c8", "#fbfcd4"],
+      lightblue: ["#c8e0f0", "#d1e6f4", "#daeaf8", "#e3f0fc"],
+      lightcoral: ["#f0b8b8", "#f4c4c4", "#f8d0d0", "#fcdcdc"],
+      lightcyan: ["#d8f0f0", "#e0f4f4", "#e8f8f8", "#f0fcfc"],
+      lightgoldenrodyellow: [
+        "#f5f0c8",
+        "#f7f4d1",
+        "#f9f8da",
+        "#fbfce3",
+      ],
+      lightgray: ["#e0e0e0", "#e6e6e6", "#ececec", "#f2f2f2"],
+      lightgreen: ["#c8e6c8", "#d1ebd1", "#daf0da", "#e3f5e3"],
+      lightgrey: ["#e0e0e0", "#e6e6e6", "#ececec", "#f2f2f2"],
+      lightpink: ["#ffb8d0", "#ffc4d8", "#ffd0e0", "#ffdce8"],
+      lightsalmon: ["#ffb898", "#ffc4a8", "#ffd0b8", "#ffdcc8"],
+      lightseagreen: ["#a8d8c8", "#b5e0d1", "#c2e8da", "#cff0e3"],
+      lightskyblue: ["#c8d8f0", "#d1e0f4", "#dae8f8", "#e3f0fc"],
+      lightslategray: ["#b8c8d8", "#c4d1e0", "#d0dae8", "#dce3f0"],
+      lightslategrey: ["#b8c8d8", "#c4d1e0", "#d0dae8", "#dce3f0"],
+      lightsteelblue: ["#c8d0e8", "#d1d9ec", "#dae2f0", "#e3ebf4"],
+      lightyellow: ["#f5f5c8", "#f7f7d1", "#f9f9da", "#fbfbe3"],
+      lime: ["#c8f0a8", "#d1f4b5", "#daf8c2", "#e3fccf"],
+      limegreen: ["#b8e6a8", "#c5ebb5", "#d2f0c2", "#dff5cf"],
+      linen: ["#f0e8d8", "#f4ece0", "#f8f0e8", "#fcf4f0"],
+      magenta: ["#ffb5ff", "#ffc4ff", "#ffd3ff", "#ffe2ff"],
+      maroon: ["#d8a8a8", "#e0b5b5", "#e8c2c2", "#f0cfcf"],
+      mediumaquamarine: ["#b8d8c8", "#c5e0d1", "#d2e8da", "#dff0e3"],
+      mediumblue: ["#a8a8e6", "#b5b5eb", "#c2c2f0", "#cfcff5"],
+      mediumorchid: ["#d0b8e6", "#d9c4eb", "#e2d0f0", "#ebdcf5"],
+      mediumpurple: ["#c8b8e6", "#d1c4eb", "#dad0f0", "#e3dcf5"],
+      mediumseagreen: ["#a8d8b8", "#b5e0c4", "#c2e8d0", "#cff0dc"],
+      mediumslateblue: ["#b8b8e6", "#c4c4eb", "#d0d0f0", "#dcdcf5"],
+      mediumspringgreen: ["#a8f0c8", "#b5f4d1", "#c2f8da", "#cffce3"],
+      mediumturquoise: ["#a8d8e6", "#b5e0eb", "#c2e8f0", "#cff0f5"],
+      mediumvioletred: ["#e6a8c8", "#ebb5d1", "#f0c2da", "#f5cfe3"],
+      midnightblue: ["#a0a0c8", "#b3b3d1", "#c6c6da", "#d9d9e3"],
+      mintcream: ["#e8f5f0", "#ecf7f4", "#f0f9f8", "#f4fbfc"],
+      mistyrose: ["#f5d8d8", "#f7e0e0", "#f9e8e8", "#fbf0f0"],
+      moccasin: ["#f5d8b0", "#f7e0bc", "#f9e8c8", "#fbf0d4"],
+      navajowhite: ["#f5d8b0", "#f7e0bc", "#f9e8c8", "#fbf0d4"],
+      navy: ["#a0a0c8", "#b3b3d1", "#c6c6da", "#d9d9e3"],
+      oldlace: ["#f0e8d8", "#f4ece0", "#f8f0e8", "#fcf4f0"],
+      olive: ["#c8c8a0", "#d1d1b3", "#dadac6", "#e3e3d9"],
+      olivedrab: ["#b8c090", "#c4ca9f", "#d0d4ae", "#dcdebd"],
+      orange: ["#ffb870", "#ffc489", "#ffd0a2", "#ffdcbb"],
+      orangered: ["#ffb090", "#ffbc9f", "#ffc8ae", "#ffd4bd"],
+      orchid: ["#e6b8e6", "#ebc4eb", "#f0d0f0", "#f5dcf5"],
+      palegoldenrod: ["#e8d8a8", "#ece0b5", "#f0e8c2", "#f4f0cf"],
+      palegreen: ["#c8e6c8", "#d1ebd1", "#daf0da", "#e3f5e3"],
+      paleturquoise: ["#c8e6e6", "#d1ebeb", "#daf0f0", "#e3f5f5"],
+      palevioletred: ["#e6b8c8", "#ebc4d1", "#f0d0da", "#f5dce3"],
+      papayawhip: ["#f5e8c8", "#f7ecd1", "#f9f0da", "#fbf4e3"],
+      peachpuff: ["#f5d0b0", "#f7d9bc", "#f9e2c8", "#fbebd4"],
+      peru: ["#d8b090", "#e0bc9f", "#e8c8ae", "#f0d4bd"],
+      pink: ["#ffc6d9", "#ffd1e1", "#ffdce9", "#ffe7f1"],
+      plum: ["#e0b8e0", "#e6c4e6", "#ecd0ec", "#f2dcf2"],
+      powderblue: ["#c8d8e6", "#d1e0eb", "#dae8f0", "#e3f0f5"],
+      purple: ["#d4b5f7", "#dcc4f9", "#e4d3fb", "#ece2fd"],
+      red: ["#ffb3ba", "#ffc4c9", "#ffd5d8", "#ffe6e7"],
+      rosybrown: ["#d8b8b8", "#e0c4c4", "#e8d0d0", "#f0dcdc"],
+      royalblue: ["#a8b8e6", "#b5c4eb", "#c2d0f0", "#cfdcf5"],
+      saddlebrown: ["#c88850", "#d19d69", "#dab282", "#e3c79b"],
+      salmon: ["#ffb098", "#ffbca8", "#ffc8b8", "#ffd4c8"],
+      sandybrown: ["#f0b870", "#f4c489", "#f8d0a2", "#fcdcbb"],
+      seagreen: ["#a8c8b8", "#b5d1c4", "#c2dad0", "#cfe3dc"],
+      seashell: ["#f5e8e0", "#f7ece6", "#f9f0ec", "#fbf4f2"],
+      sienna: ["#d88850", "#e09d69", "#e8b282", "#f0c79b"],
+      silver: ["#c9c9d9", "#d4d4e1", "#dfdfe9", "#eaeaf1"],
+      skyblue: ["#c8d8f0", "#d1e0f4", "#dae8f8", "#e3f0fc"],
+      slateblue: ["#b8b8e6", "#c4c4eb", "#d0d0f0", "#dcdcf5"],
+      slategray: ["#b8c8d8", "#c4d1e0", "#d0dae8", "#dce3f0"],
+      slategrey: ["#b8c8d8", "#c4d1e0", "#d0dae8", "#dce3f0"],
+      snow: ["#f5f0f0", "#f7f4f4", "#f9f8f8", "#fbfcfc"],
+      springgreen: ["#a8e6b8", "#b5ebc4", "#c2f0d0", "#cff5dc"],
+      steelblue: ["#a8c0d8", "#b5cae0", "#c2d4e8", "#cfdef0"],
+      tan: ["#d8b898", "#e0c4a8", "#e8d0b8", "#f0dcc8"],
+      teal: ["#a8d8d8", "#b5e0e0", "#c2e8e8", "#cff0f0"],
+      thistle: ["#d8c8d8", "#e0d1d1", "#e8dada", "#f0e3e3"],
+      tomato: ["#ffb890", "#ffc49f", "#ffd0ae", "#ffdcbd"],
+      turquoise: ["#a8d8e6", "#b5e0eb", "#c2e8f0", "#cff0f5"],
+      violet: ["#d8b8d8", "#e0c4c4", "#e8d0d0", "#f0dcdc"],
+      wheat: ["#e6d0a8", "#ebd9b5", "#f0e2c2", "#f5ebcf"],
+      white: ["#f0f0f0", "#f4f4f4", "#f8f8f8", "#fcfcfc"],
+      whitesmoke: ["#e8e8e8", "#ececec", "#f0f0f0", "#f4f4f4"],
+      yellow: ["#fff4b3", "#fff7c4", "#fffad5", "#fffde6"],
+      yellowgreen: ["#d0e6a8", "#d9ebb5", "#e2f0c2", "#ebf5cf"],
+      rainbow: [
+        "#ff0000",
+        "#ff7f00",
+        "#ffff00",
+        "#00ff00",
+        "#0000ff",
+        "#4b0082",
+        "#9400d3",
+        "#ff0000",
+        "#ff7f00",
+        "#ffff00",
+        "#00ff00",
+        "#0000ff",
+        "#4b0082",
+        "#9400d3",
+      ],
     };
 
     // BRIGHT PALETTES - fully saturated, vibrant aesthetic (all 140 CSS named colors)
     const brightPalettes = {
-      aliceblue: ['#e0f5ff', '#eafaff', '#f0fcff', '#f5feff'],
-      antiquewhite: ['#faebd7', '#fcf0e0', '#fdf5e9', '#fffaf2'],
-      aqua: ['#00ffff', '#33ffff', '#66ffff', '#99ffff'],
-      aquamarine: ['#7fffd4', '#99ffe0', '#b3ffe9', '#ccfff3'],
-      azure: ['#e0f5ff', '#eafaff', '#f0fcff', '#f5feff'],
-      beige: ['#f5f5dc', '#f7f7e4', '#f9f9eb', '#fbfbf3'],
-      bisque: ['#ffe4c4', '#ffe9d1', '#ffeedd', '#fff3ea'],
-      black: ['#000000', '#1a1a1a', '#333333', '#4d4d4d'],
-      blanchedalmond: ['#ffebcd', '#ffefda', '#fff3e6', '#fff7f3'],
-      blue: ['#0066ff', '#3385ff', '#66a3ff', '#99c2ff'],
-      blueviolet: ['#8a2be2', '#a155e8', '#b87fee', '#cfa9f4'],
-      brown: ['#a0522d', '#b3704d', '#c68e6d', '#d9ac8d'],
-      burlywood: ['#deb887', '#e5c69d', '#ecd4b3', '#f3e2c9'],
-      cadetblue: ['#5f9ea0', '#7fb1b3', '#9fc4c6', '#bfd7d9'],
-      chartreuse: ['#7fff00', '#99ff33', '#b3ff66', '#ccff99'],
-      chocolate: ['#d2691e', '#da8748', '#e2a572', '#eac39c'],
-      coral: ['#ff7f50', '#ff9973', '#ffb396', '#ffccb9'],
-      cornflowerblue: ['#6495ed', '#83aaf1', '#a2bff5', '#c1d4f9'],
-      cornsilk: ['#fff8dc', '#fffae4', '#fffceb', '#fffdf3'],
-      crimson: ['#dc143c', '#e2435f', '#e87282', '#eea1a5'],
-      cyan: ['#00ffff', '#33ffff', '#66ffff', '#99ffff'],
-      darkblue: ['#00008b', '#3333a4', '#6666bd', '#9999d6'],
-      darkcyan: ['#008b8b', '#33a4a4', '#66bdbd', '#99d6d6'],
-      darkgoldenrod: ['#b8860b', '#c6a13b', '#d4bc6b', '#e2d79b'],
-      darkgray: ['#a9a9a9', '#bababa', '#cbcbcb', '#dcdcdc'],
-      darkgreen: ['#006400', '#339333', '#66c266', '#99f199'],
-      darkgrey: ['#a9a9a9', '#bababa', '#cbcbcb', '#dcdcdc'],
-      darkkhaki: ['#bdb76b', '#c9c588', '#d5d3a5', '#e1e1c2'],
-      darkmagenta: ['#8b008b', '#a433a4', '#bd66bd', '#d699d6'],
-      darkolivegreen: ['#556b2f', '#778958', '#99a781', '#bbc5aa'],
-      darkorange: ['#ff8c00', '#ffa333', '#ffba66', '#ffd199'],
-      darkorchid: ['#9932cc', '#ad5bd6', '#c184e0', '#d5adea'],
-      darkred: ['#8b0000', '#a43333', '#bd6666', '#d69999'],
-      darksalmon: ['#e9967a', '#edab94', '#f1c0ae', '#f5d5c8'],
-      darkseagreen: ['#8fbc8f', '#a5c9a5', '#bbd6bb', '#d1e3d1'],
-      darkslateblue: ['#483d8b', '#6a64a4', '#8c8bbd', '#aeb2d6'],
-      darkslategray: ['#2f4f4f', '#597272', '#839595', '#adb8b8'],
-      darkslategrey: ['#2f4f4f', '#597272', '#839595', '#adb8b8'],
-      darkturquoise: ['#00ced1', '#33d8db', '#66e2e5', '#99ecef'],
-      darkviolet: ['#9400d3', '#a933dc', '#be66e5', '#d399ee'],
-      deeppink: ['#ff1493', '#ff47a8', '#ff7abd', '#ffadd2'],
-      deepskyblue: ['#00bfff', '#33ccff', '#66d9ff', '#99e6ff'],
-      dimgray: ['#696969', '#878787', '#a5a5a5', '#c3c3c3'],
-      dimgrey: ['#696969', '#878787', '#a5a5a5', '#c3c3c3'],
-      dodgerblue: ['#1e90ff', '#4ea6ff', '#7ebcff', '#aed2ff'],
-      firebrick: ['#b22222', '#c14e4e', '#d07a7a', '#dfa6a6'],
-      floralwhite: ['#fffaf0', '#fffbf4', '#fffcf8', '#fffdfb'],
-      forestgreen: ['#228b22', '#4ea44e', '#7abd7a', '#a6d6a6'],
-      fuchsia: ['#ff00ff', '#ff33ff', '#ff66ff', '#ff99ff'],
-      gainsboro: ['#dcdcdc', '#e4e4e4', '#ececec', '#f4f4f4'],
-      ghostwhite: ['#f8f8ff', '#fafaff', '#fcfcff', '#fefeff'],
-      gold: ['#ffd700', '#ffdf33', '#ffe766', '#ffef99'],
-      goldenrod: ['#daa520', '#e1ba4d', '#e8cf7a', '#efe4a7'],
-      gray: ['#808080', '#999999', '#b3b3b3', '#cccccc'],
-      green: ['#00ff00', '#33ff33', '#66ff66', '#99ff99'],
-      greenyellow: ['#adff2f', '#bdff58', '#cdff81', '#ddffaa'],
-      grey: ['#808080', '#999999', '#b3b3b3', '#cccccc'],
-      honeydew: ['#f0fff0', '#f4fff4', '#f8fff8', '#fcfffb'],
-      hotpink: ['#ff69b4', '#ff87c3', '#ffa5d2', '#ffc3e1'],
-      indianred: ['#cd5c5c', '#d77d7d', '#e19e9e', '#ebbfbf'],
-      indigo: ['#4b0082', '#6b339b', '#8b66b4', '#ab99cd'],
-      ivory: ['#fffff0', '#fffff4', '#fffff8', '#fffffb'],
-      khaki: ['#f0e68c', '#f4eba3', '#f8f0ba', '#fcf5d1'],
-      lavender: ['#e6e6fa', '#ebebfb', '#f0f0fc', '#f5f5fd'],
-      lavenderblush: ['#fff0f5', '#fff4f7', '#fff8f9', '#fffcfb'],
-      lawngreen: ['#7cfc00', '#96fd33', '#b0fd66', '#cafe99'],
-      lemonchiffon: ['#fffacd', '#fffbda', '#fffce6', '#fffdf3'],
-      lightblue: ['#add8e6', '#bde0eb', '#cde8f0', '#ddf0f5'],
-      lightcoral: ['#f08080', '#f49999', '#f8b3b3', '#fccccc'],
-      lightcyan: ['#e0ffff', '#e6ffff', '#ecffff', '#f2ffff'],
-      lightgoldenrodyellow: ['#fafad2', '#fbfbdc', '#fcfce6', '#fdfdf0'],
-      lightgray: ['#d3d3d3', '#dddddd', '#e7e7e7', '#f1f1f1'],
-      lightgreen: ['#90ee90', '#a6f1a6', '#bcf4bc', '#d2f7d2'],
-      lightgrey: ['#d3d3d3', '#dddddd', '#e7e7e7', '#f1f1f1'],
-      lightpink: ['#ffb6c1', '#ffc4cd', '#ffd2d9', '#ffe0e5'],
-      lightsalmon: ['#ffa07a', '#ffb394', '#ffc6ae', '#ffd9c8'],
-      lightseagreen: ['#20b2aa', '#4dc1ba', '#7ad0ca', '#a7dfda'],
-      lightskyblue: ['#87cefa', '#9fd8fb', '#b7e2fc', '#cfecfd'],
-      lightslategray: ['#778899', '#9fa0ad', '#b8b9c1', '#d0d2d5'],
-      lightslategrey: ['#778899', '#9fa0ad', '#b8b9c1', '#d0d2d5'],
-      lightsteelblue: ['#b0c4de', '#c0d0e5', '#d0dcec', '#e0e8f3'],
-      lightyellow: ['#ffffe0', '#ffffe6', '#ffffec', '#fffff2'],
-      lime: ['#00ff00', '#33ff33', '#66ff66', '#99ff99'],
-      limegreen: ['#32cd32', '#5bd75b', '#84e184', '#adebad'],
-      linen: ['#faf0e6', '#fcf4eb', '#fdf8f0', '#fefcf5'],
-      magenta: ['#ff00ff', '#ff33ff', '#ff66ff', '#ff99ff'],
-      maroon: ['#800000', '#993333', '#b36666', '#cc9999'],
-      mediumaquamarine: ['#66cdaa', '#85d7ba', '#a4e1ca', '#c3ebda'],
-      mediumblue: ['#0000cd', '#3333d6', '#6666df', '#9999e8'],
-      mediumorchid: ['#ba55d3', '#c877dc', '#d699e5', '#e4bbee'],
-      mediumpurple: ['#9370db', '#a98fe1', '#bfaee7', '#d5cded'],
-      mediumseagreen: ['#3cb371', '#63c28d', '#8ad1a9', '#b1e0c5'],
-      mediumslateblue: ['#7b68ee', '#9886f2', '#b5a4f6', '#d2c2fa'],
-      mediumspringgreen: ['#00fa9a', '#33fbb1', '#66fcc8', '#99fddf'],
-      mediumturquoise: ['#48d1cc', '#6ddad6', '#92e3e0', '#b7ecea'],
-      mediumvioletred: ['#c71585', '#d244a1', '#dd73bd', '#e8a2d9'],
-      midnightblue: ['#191970', '#474797', '#7575be', '#a3a3e5'],
-      mintcream: ['#f5fffa', '#f7fffb', '#f9fffc', '#fbfffd'],
-      mistyrose: ['#ffe4e1', '#ffe9e6', '#ffeeeb', '#fff3f0'],
-      moccasin: ['#ffe4b5', '#ffe9c4', '#ffeed3', '#fff3e2'],
-      navajowhite: ['#ffdead', '#ffe4bd', '#ffeacd', '#fff0dd'],
-      navy: ['#000080', '#333399', '#6666b3', '#9999cc'],
-      oldlace: ['#fdf5e6', '#fdf7eb', '#fef9f0', '#fefbf5'],
-      olive: ['#808000', '#999933', '#b3b366', '#cccc99'],
-      olivedrab: ['#6b8e23', '#89a54f', '#a7bc7b', '#c5d3a7'],
-      orange: ['#ff8800', '#ff9d33', '#ffb266', '#ffc799'],
-      orangered: ['#ff4500', '#ff6a33', '#ff8f66', '#ffb499'],
-      orchid: ['#da70d6', '#e18fde', '#e8aee6', '#efcdee'],
-      palegoldenrod: ['#eee8aa', '#f1edba', '#f4f2ca', '#f7f7da'],
-      palegreen: ['#98fb98', '#acfcac', '#c0fdc0', '#d4fed4'],
-      paleturquoise: ['#afeeee', '#bff1f1', '#cff4f4', '#dff7f7'],
-      palevioletred: ['#db7093', '#e28fa9', '#e9aebf', '#f0cdd5'],
-      papayawhip: ['#ffefd5', '#fff2dc', '#fff5e3', '#fff8ea'],
-      peachpuff: ['#ffdab9', '#ffe2c8', '#ffeaa7', '#fff2e6'],
-      peru: ['#cd853f', '#d79d65', '#e1b58b', '#ebcdb1'],
-      pink: ['#ffc0cb', '#ffccd5', '#ffd8df', '#ffe4e9'],
-      plum: ['#dda0dd', '#e4b3e4', '#ebc6eb', '#f2d9f2'],
-      powderblue: ['#b0e0e6', '#c0e6eb', '#d0ecf0', '#e0f2f5'],
-      purple: ['#9933ff', '#ad5cff', '#c285ff', '#d6adff'],
-      red: ['#ff0000', '#ff3333', '#ff6666', '#ff9999'],
-      rosybrown: ['#bc8f8f', '#c9a5a5', '#d6bbbb', '#e3d1d1'],
-      royalblue: ['#4169e1', '#6787e7', '#8da5ed', '#b3c3f3'],
-      saddlebrown: ['#8b4513', '#a26a42', '#b98f71', '#d0b4a0'],
-      salmon: ['#fa8072', '#fb9991', '#fcb3b0', '#fdcccf'],
-      sandybrown: ['#f4a460', '#f6b680', '#f8c8a0', '#fadac0'],
-      seagreen: ['#2e8b57', '#57a479', '#80bd9b', '#a9d6bd'],
-      seashell: ['#fff5ee', '#fff7f1', '#fff9f4', '#fffbf7'],
-      sienna: ['#a0522d', '#b3704d', '#c68e6d', '#d9ac8d'],
-      silver: ['#c0c0c0', '#d0d0d0', '#e0e0e0', '#f0f0f0'],
-      skyblue: ['#87ceeb', '#9fd8ef', '#b7e2f3', '#cfecf7'],
-      slateblue: ['#6a5acd', '#8878d7', '#a696e1', '#c4b4eb'],
-      slategray: ['#708090', '#8f99a6', '#aeb3bc', '#cdccd2'],
-      slategrey: ['#708090', '#8f99a6', '#aeb3bc', '#cdccd2'],
-      snow: ['#fffafa', '#fffbfb', '#fffcfc', '#fffdfd'],
-      springgreen: ['#00ff7f', '#33ff99', '#66ffb3', '#99ffcc'],
-      steelblue: ['#4682b4', '#6b9bc3', '#90b4d2', '#b5cde1'],
-      tan: ['#d2b48c', '#dbc3a3', '#e4d2ba', '#ede1d1'],
-      teal: ['#008080', '#339999', '#66b3b3', '#99cccc'],
-      thistle: ['#d8bfd8', '#dfccdf', '#e6d9e6', '#ede6ed'],
-      tomato: ['#ff6347', '#ff826a', '#ffa18d', '#ffc0b0'],
-      turquoise: ['#40e0d0', '#66e6d9', '#8cece2', '#b3f2eb'],
-      violet: ['#ee82ee', '#f19bf1', '#f4b4f4', '#f7cdf7'],
-      wheat: ['#f5deb3', '#f7e5c2', '#f9ecd1', '#fbf3e0'],
-      white: ['#ffffff', '#ffffff', '#ffffff', '#ffffff'],
-      whitesmoke: ['#f5f5f5', '#f7f7f7', '#f9f9f9', '#fbfbfb'],
-      yellow: ['#ffff00', '#ffff33', '#ffff66', '#ffff99'],
-      yellowgreen: ['#9acd32', '#aed75b', '#c2e184', '#d6ebad'],
-      rainbow: ['#ff0000', '#ff7f00', '#ffff00', '#00ff00', '#0000ff', '#4b0082', '#9400d3', '#ff0000', '#ff7f00', '#ffff00', '#00ff00', '#0000ff', '#4b0082', '#9400d3']
+      aliceblue: ["#e0f5ff", "#eafaff", "#f0fcff", "#f5feff"],
+      antiquewhite: ["#faebd7", "#fcf0e0", "#fdf5e9", "#fffaf2"],
+      aqua: ["#00ffff", "#33ffff", "#66ffff", "#99ffff"],
+      aquamarine: ["#7fffd4", "#99ffe0", "#b3ffe9", "#ccfff3"],
+      azure: ["#e0f5ff", "#eafaff", "#f0fcff", "#f5feff"],
+      beige: ["#f5f5dc", "#f7f7e4", "#f9f9eb", "#fbfbf3"],
+      bisque: ["#ffe4c4", "#ffe9d1", "#ffeedd", "#fff3ea"],
+      black: ["#000000", "#1a1a1a", "#333333", "#4d4d4d"],
+      blanchedalmond: ["#ffebcd", "#ffefda", "#fff3e6", "#fff7f3"],
+      blue: ["#0066ff", "#3385ff", "#66a3ff", "#99c2ff"],
+      blueviolet: ["#8a2be2", "#a155e8", "#b87fee", "#cfa9f4"],
+      brown: ["#a0522d", "#b3704d", "#c68e6d", "#d9ac8d"],
+      burlywood: ["#deb887", "#e5c69d", "#ecd4b3", "#f3e2c9"],
+      cadetblue: ["#5f9ea0", "#7fb1b3", "#9fc4c6", "#bfd7d9"],
+      chartreuse: ["#7fff00", "#99ff33", "#b3ff66", "#ccff99"],
+      chocolate: ["#d2691e", "#da8748", "#e2a572", "#eac39c"],
+      coral: ["#ff7f50", "#ff9973", "#ffb396", "#ffccb9"],
+      cornflowerblue: ["#6495ed", "#83aaf1", "#a2bff5", "#c1d4f9"],
+      cornsilk: ["#fff8dc", "#fffae4", "#fffceb", "#fffdf3"],
+      crimson: ["#dc143c", "#e2435f", "#e87282", "#eea1a5"],
+      cyan: ["#00ffff", "#33ffff", "#66ffff", "#99ffff"],
+      darkblue: ["#00008b", "#3333a4", "#6666bd", "#9999d6"],
+      darkcyan: ["#008b8b", "#33a4a4", "#66bdbd", "#99d6d6"],
+      darkgoldenrod: ["#b8860b", "#c6a13b", "#d4bc6b", "#e2d79b"],
+      darkgray: ["#a9a9a9", "#bababa", "#cbcbcb", "#dcdcdc"],
+      darkgreen: ["#006400", "#339333", "#66c266", "#99f199"],
+      darkgrey: ["#a9a9a9", "#bababa", "#cbcbcb", "#dcdcdc"],
+      darkkhaki: ["#bdb76b", "#c9c588", "#d5d3a5", "#e1e1c2"],
+      darkmagenta: ["#8b008b", "#a433a4", "#bd66bd", "#d699d6"],
+      darkolivegreen: ["#556b2f", "#778958", "#99a781", "#bbc5aa"],
+      darkorange: ["#ff8c00", "#ffa333", "#ffba66", "#ffd199"],
+      darkorchid: ["#9932cc", "#ad5bd6", "#c184e0", "#d5adea"],
+      darkred: ["#8b0000", "#a43333", "#bd6666", "#d69999"],
+      darksalmon: ["#e9967a", "#edab94", "#f1c0ae", "#f5d5c8"],
+      darkseagreen: ["#8fbc8f", "#a5c9a5", "#bbd6bb", "#d1e3d1"],
+      darkslateblue: ["#483d8b", "#6a64a4", "#8c8bbd", "#aeb2d6"],
+      darkslategray: ["#2f4f4f", "#597272", "#839595", "#adb8b8"],
+      darkslategrey: ["#2f4f4f", "#597272", "#839595", "#adb8b8"],
+      darkturquoise: ["#00ced1", "#33d8db", "#66e2e5", "#99ecef"],
+      darkviolet: ["#9400d3", "#a933dc", "#be66e5", "#d399ee"],
+      deeppink: ["#ff1493", "#ff47a8", "#ff7abd", "#ffadd2"],
+      deepskyblue: ["#00bfff", "#33ccff", "#66d9ff", "#99e6ff"],
+      dimgray: ["#696969", "#878787", "#a5a5a5", "#c3c3c3"],
+      dimgrey: ["#696969", "#878787", "#a5a5a5", "#c3c3c3"],
+      dodgerblue: ["#1e90ff", "#4ea6ff", "#7ebcff", "#aed2ff"],
+      firebrick: ["#b22222", "#c14e4e", "#d07a7a", "#dfa6a6"],
+      floralwhite: ["#fffaf0", "#fffbf4", "#fffcf8", "#fffdfb"],
+      forestgreen: ["#228b22", "#4ea44e", "#7abd7a", "#a6d6a6"],
+      fuchsia: ["#ff00ff", "#ff33ff", "#ff66ff", "#ff99ff"],
+      gainsboro: ["#dcdcdc", "#e4e4e4", "#ececec", "#f4f4f4"],
+      ghostwhite: ["#f8f8ff", "#fafaff", "#fcfcff", "#fefeff"],
+      gold: ["#ffd700", "#ffdf33", "#ffe766", "#ffef99"],
+      goldenrod: ["#daa520", "#e1ba4d", "#e8cf7a", "#efe4a7"],
+      gray: ["#808080", "#999999", "#b3b3b3", "#cccccc"],
+      green: ["#00ff00", "#33ff33", "#66ff66", "#99ff99"],
+      greenyellow: ["#adff2f", "#bdff58", "#cdff81", "#ddffaa"],
+      grey: ["#808080", "#999999", "#b3b3b3", "#cccccc"],
+      honeydew: ["#f0fff0", "#f4fff4", "#f8fff8", "#fcfffb"],
+      hotpink: ["#ff69b4", "#ff87c3", "#ffa5d2", "#ffc3e1"],
+      indianred: ["#cd5c5c", "#d77d7d", "#e19e9e", "#ebbfbf"],
+      indigo: ["#4b0082", "#6b339b", "#8b66b4", "#ab99cd"],
+      ivory: ["#fffff0", "#fffff4", "#fffff8", "#fffffb"],
+      khaki: ["#f0e68c", "#f4eba3", "#f8f0ba", "#fcf5d1"],
+      lavender: ["#e6e6fa", "#ebebfb", "#f0f0fc", "#f5f5fd"],
+      lavenderblush: ["#fff0f5", "#fff4f7", "#fff8f9", "#fffcfb"],
+      lawngreen: ["#7cfc00", "#96fd33", "#b0fd66", "#cafe99"],
+      lemonchiffon: ["#fffacd", "#fffbda", "#fffce6", "#fffdf3"],
+      lightblue: ["#add8e6", "#bde0eb", "#cde8f0", "#ddf0f5"],
+      lightcoral: ["#f08080", "#f49999", "#f8b3b3", "#fccccc"],
+      lightcyan: ["#e0ffff", "#e6ffff", "#ecffff", "#f2ffff"],
+      lightgoldenrodyellow: [
+        "#fafad2",
+        "#fbfbdc",
+        "#fcfce6",
+        "#fdfdf0",
+      ],
+      lightgray: ["#d3d3d3", "#dddddd", "#e7e7e7", "#f1f1f1"],
+      lightgreen: ["#90ee90", "#a6f1a6", "#bcf4bc", "#d2f7d2"],
+      lightgrey: ["#d3d3d3", "#dddddd", "#e7e7e7", "#f1f1f1"],
+      lightpink: ["#ffb6c1", "#ffc4cd", "#ffd2d9", "#ffe0e5"],
+      lightsalmon: ["#ffa07a", "#ffb394", "#ffc6ae", "#ffd9c8"],
+      lightseagreen: ["#20b2aa", "#4dc1ba", "#7ad0ca", "#a7dfda"],
+      lightskyblue: ["#87cefa", "#9fd8fb", "#b7e2fc", "#cfecfd"],
+      lightslategray: ["#778899", "#9fa0ad", "#b8b9c1", "#d0d2d5"],
+      lightslategrey: ["#778899", "#9fa0ad", "#b8b9c1", "#d0d2d5"],
+      lightsteelblue: ["#b0c4de", "#c0d0e5", "#d0dcec", "#e0e8f3"],
+      lightyellow: ["#ffffe0", "#ffffe6", "#ffffec", "#fffff2"],
+      lime: ["#00ff00", "#33ff33", "#66ff66", "#99ff99"],
+      limegreen: ["#32cd32", "#5bd75b", "#84e184", "#adebad"],
+      linen: ["#faf0e6", "#fcf4eb", "#fdf8f0", "#fefcf5"],
+      magenta: ["#ff00ff", "#ff33ff", "#ff66ff", "#ff99ff"],
+      maroon: ["#800000", "#993333", "#b36666", "#cc9999"],
+      mediumaquamarine: ["#66cdaa", "#85d7ba", "#a4e1ca", "#c3ebda"],
+      mediumblue: ["#0000cd", "#3333d6", "#6666df", "#9999e8"],
+      mediumorchid: ["#ba55d3", "#c877dc", "#d699e5", "#e4bbee"],
+      mediumpurple: ["#9370db", "#a98fe1", "#bfaee7", "#d5cded"],
+      mediumseagreen: ["#3cb371", "#63c28d", "#8ad1a9", "#b1e0c5"],
+      mediumslateblue: ["#7b68ee", "#9886f2", "#b5a4f6", "#d2c2fa"],
+      mediumspringgreen: ["#00fa9a", "#33fbb1", "#66fcc8", "#99fddf"],
+      mediumturquoise: ["#48d1cc", "#6ddad6", "#92e3e0", "#b7ecea"],
+      mediumvioletred: ["#c71585", "#d244a1", "#dd73bd", "#e8a2d9"],
+      midnightblue: ["#191970", "#474797", "#7575be", "#a3a3e5"],
+      mintcream: ["#f5fffa", "#f7fffb", "#f9fffc", "#fbfffd"],
+      mistyrose: ["#ffe4e1", "#ffe9e6", "#ffeeeb", "#fff3f0"],
+      moccasin: ["#ffe4b5", "#ffe9c4", "#ffeed3", "#fff3e2"],
+      navajowhite: ["#ffdead", "#ffe4bd", "#ffeacd", "#fff0dd"],
+      navy: ["#000080", "#333399", "#6666b3", "#9999cc"],
+      oldlace: ["#fdf5e6", "#fdf7eb", "#fef9f0", "#fefbf5"],
+      olive: ["#808000", "#999933", "#b3b366", "#cccc99"],
+      olivedrab: ["#6b8e23", "#89a54f", "#a7bc7b", "#c5d3a7"],
+      orange: ["#ff8800", "#ff9d33", "#ffb266", "#ffc799"],
+      orangered: ["#ff4500", "#ff6a33", "#ff8f66", "#ffb499"],
+      orchid: ["#da70d6", "#e18fde", "#e8aee6", "#efcdee"],
+      palegoldenrod: ["#eee8aa", "#f1edba", "#f4f2ca", "#f7f7da"],
+      palegreen: ["#98fb98", "#acfcac", "#c0fdc0", "#d4fed4"],
+      paleturquoise: ["#afeeee", "#bff1f1", "#cff4f4", "#dff7f7"],
+      palevioletred: ["#db7093", "#e28fa9", "#e9aebf", "#f0cdd5"],
+      papayawhip: ["#ffefd5", "#fff2dc", "#fff5e3", "#fff8ea"],
+      peachpuff: ["#ffdab9", "#ffe2c8", "#ffeaa7", "#fff2e6"],
+      peru: ["#cd853f", "#d79d65", "#e1b58b", "#ebcdb1"],
+      pink: ["#ffc0cb", "#ffccd5", "#ffd8df", "#ffe4e9"],
+      plum: ["#dda0dd", "#e4b3e4", "#ebc6eb", "#f2d9f2"],
+      powderblue: ["#b0e0e6", "#c0e6eb", "#d0ecf0", "#e0f2f5"],
+      purple: ["#9933ff", "#ad5cff", "#c285ff", "#d6adff"],
+      red: ["#ff0000", "#ff3333", "#ff6666", "#ff9999"],
+      rosybrown: ["#bc8f8f", "#c9a5a5", "#d6bbbb", "#e3d1d1"],
+      royalblue: ["#4169e1", "#6787e7", "#8da5ed", "#b3c3f3"],
+      saddlebrown: ["#8b4513", "#a26a42", "#b98f71", "#d0b4a0"],
+      salmon: ["#fa8072", "#fb9991", "#fcb3b0", "#fdcccf"],
+      sandybrown: ["#f4a460", "#f6b680", "#f8c8a0", "#fadac0"],
+      seagreen: ["#2e8b57", "#57a479", "#80bd9b", "#a9d6bd"],
+      seashell: ["#fff5ee", "#fff7f1", "#fff9f4", "#fffbf7"],
+      sienna: ["#a0522d", "#b3704d", "#c68e6d", "#d9ac8d"],
+      silver: ["#c0c0c0", "#d0d0d0", "#e0e0e0", "#f0f0f0"],
+      skyblue: ["#87ceeb", "#9fd8ef", "#b7e2f3", "#cfecf7"],
+      slateblue: ["#6a5acd", "#8878d7", "#a696e1", "#c4b4eb"],
+      slategray: ["#708090", "#8f99a6", "#aeb3bc", "#cdccd2"],
+      slategrey: ["#708090", "#8f99a6", "#aeb3bc", "#cdccd2"],
+      snow: ["#fffafa", "#fffbfb", "#fffcfc", "#fffdfd"],
+      springgreen: ["#00ff7f", "#33ff99", "#66ffb3", "#99ffcc"],
+      steelblue: ["#4682b4", "#6b9bc3", "#90b4d2", "#b5cde1"],
+      tan: ["#d2b48c", "#dbc3a3", "#e4d2ba", "#ede1d1"],
+      teal: ["#008080", "#339999", "#66b3b3", "#99cccc"],
+      thistle: ["#d8bfd8", "#dfccdf", "#e6d9e6", "#ede6ed"],
+      tomato: ["#ff6347", "#ff826a", "#ffa18d", "#ffc0b0"],
+      turquoise: ["#40e0d0", "#66e6d9", "#8cece2", "#b3f2eb"],
+      violet: ["#ee82ee", "#f19bf1", "#f4b4f4", "#f7cdf7"],
+      wheat: ["#f5deb3", "#f7e5c2", "#f9ecd1", "#fbf3e0"],
+      white: ["#ffffff", "#ffffff", "#ffffff", "#ffffff"],
+      whitesmoke: ["#f5f5f5", "#f7f7f7", "#f9f9f9", "#fbfbfb"],
+      yellow: ["#ffff00", "#ffff33", "#ffff66", "#ffff99"],
+      yellowgreen: ["#9acd32", "#aed75b", "#c2e184", "#d6ebad"],
+      rainbow: [
+        "#ff0000",
+        "#ff7f00",
+        "#ffff00",
+        "#00ff00",
+        "#0000ff",
+        "#4b0082",
+        "#9400d3",
+        "#ff0000",
+        "#ff7f00",
+        "#ffff00",
+        "#00ff00",
+        "#0000ff",
+        "#4b0082",
+        "#9400d3",
+      ],
     };
 
     // Current palette set (starts with gloomy)
     let currentPaletteSet = gloomyPalettes;
 
     // Font size control commands
-    const sizeCommands = ['bigger', 'smaller', 'normal'];
+    const sizeCommands = ["bigger", "smaller", "normal"];
 
     // Preset commands
-    const presetCommands = ['gloomy', 'pastel', 'bright'];
+    const presetCommands = ["gloomy", "pastel", "bright"];
 
     // Reset command
-    const resetCommand = 'reset';
+    const resetCommand = "reset";
 
     // Default settings (original state)
     const defaults = {
-      backgroundColor: 'linear-gradient(45deg, #1a1a2e, #16213e, #0f3460, #533483)',
-      backgroundSize: '400% 400%',
-      backgroundAnimation: 'gradientShift 30s ease infinite',
-      fontSize: '3rem',
-      fontFamily: 'Arial, sans-serif',
-      textShadow: 'none',
-      fontWeight: 'normal',
-      fontStyle: 'normal',
-      textDecoration: 'none',
-      preset: 'gloomy'
+      backgroundColor:
+        "linear-gradient(45deg, #1a1a2e, #16213e, #0f3460, #533483)",
+      backgroundSize: "400% 400%",
+      backgroundAnimation: "gradientShift 30s ease infinite",
+      fontSize: "3rem",
+      fontFamily: "Arial, sans-serif",
+      textShadow: "none",
+      fontWeight: "normal",
+      fontStyle: "normal",
+      textDecoration: "none",
+      preset: "gloomy",
     };
 
     // Font families - both generic and specific fonts
     const fontFamilies = {
       // Generic categories
-      serif: 'Georgia, serif',
-      sans: 'Arial, sans-serif',
-      mono: 'Courier New, monospace',
-      monospace: 'Courier New, monospace',
-      cursive: 'cursive',
-      fantasy: 'Impact, fantasy',
+      serif: "Georgia, serif",
+      sans: "Arial, sans-serif",
+      mono: "Courier New, monospace",
+      monospace: "Courier New, monospace",
+      cursive: "cursive",
+      fantasy: "Impact, fantasy",
 
       // Specific common fonts (single word names)
-      arial: 'Arial, sans-serif',
-      ariel: 'Arial, sans-serif',
-      georgia: 'Georgia, serif',
-      courier: 'Courier New, monospace',
-      verdana: 'Verdana, sans-serif',
-      impact: 'Impact, fantasy',
-      helvetica: 'Helvetica, sans-serif',
+      arial: "Arial, sans-serif",
+      ariel: "Arial, sans-serif",
+      georgia: "Georgia, serif",
+      courier: "Courier New, monospace",
+      verdana: "Verdana, sans-serif",
+      impact: "Impact, fantasy",
+      helvetica: "Helvetica, sans-serif",
 
       // Multi-word fonts (user says "comic sans" -> "comicsans")
-      comicsans: 'Comic Sans MS, cursive',
-      timesnewroman: 'Times New Roman, serif',
-      couriernew: 'Courier New, monospace',
-      trebuchet: 'Trebuchet MS, sans-serif',
-      palatino: 'Palatino Linotype, serif',
-      garamond: 'Garamond, serif',
-      bookman: 'Bookman, serif',
-      avenir: 'Avenir, sans-serif',
-      rockwell: 'Rockwell, serif'
+      comicsans: "Comic Sans MS, cursive",
+      timesnewroman: "Times New Roman, serif",
+      couriernew: "Courier New, monospace",
+      trebuchet: "Trebuchet MS, sans-serif",
+      palatino: "Palatino Linotype, serif",
+      garamond: "Garamond, serif",
+      bookman: "Bookman, serif",
+      avenir: "Avenir, sans-serif",
+      rockwell: "Rockwell, serif",
     };
 
     // Text shadow commands
     const shadowCommands = {
-      shadow: '2px 2px 4px rgba(0,0,0,0.8)',
-      glow: '0 0 10px #fff, 0 0 20px #fff',
-      noshadow: 'none'
+      shadow: "2px 2px 4px rgba(0,0,0,0.8)",
+      glow: "0 0 10px #fff, 0 0 20px #fff",
+      noshadow: "none",
     };
 
     const shadows = Object.keys(shadowCommands);
 
     // Text decoration commands
-    const decorationCommands = ['bold', 'italic', 'italics', 'underline', 'strikethrough', 'nobold', 'noitalic', 'noitalics', 'nounderline', 'nostrikethrough'];
+    const decorationCommands = [
+      "bold",
+      "italic",
+      "italics",
+      "underline",
+      "strikethrough",
+      "nobold",
+      "noitalic",
+      "noitalics",
+      "nounderline",
+      "nostrikethrough",
+    ];
 
     // Track current decoration states
     let isBold = false;
@@ -599,13 +1395,13 @@
     let isStrikethrough = false;
 
     // Track last executed commands to avoid double-triggering
-    let lastColorCommand = '';
-    let lastSizeCommand = '';
-    let lastFontCommand = '';
-    let lastShadowCommand = '';
-    let lastDecorationCommand = '';
-    let lastPresetCommand = '';
-    let lastResetCommand = '';
+    let lastColorCommand = "";
+    let lastSizeCommand = "";
+    let lastFontCommand = "";
+    let lastShadowCommand = "";
+    let lastDecorationCommand = "";
+    let lastPresetCommand = "";
+    let lastResetCommand = "";
     let shadowEnabled = false;
 
     // Track recognition errors to prevent infinite restart loop
@@ -619,85 +1415,106 @@
       bold: false,
       italic: false,
       underline: false,
-      strikethrough: false
+      strikethrough: false,
     };
 
-    recognition.lang = 'en-US';
+    recognition.lang = "en-US";
     recognition.continuous = true;
     recognition.interimResults = true; // Show interim results for live captions
 
     // Helper function to apply text decorations
     function applyTextDecorations() {
-      captionsDiv.style.fontWeight = isBold ? 'bold' : 'normal';
-      captionsDiv.style.fontStyle = isItalic ? 'italic' : 'normal';
+      captionsDiv.style.fontWeight = isBold ? "bold" : "normal";
+      captionsDiv.style.fontStyle = isItalic ? "italic" : "normal";
 
       // Combine underline and strikethrough into textDecoration
       let decorations = [];
-      if (isUnderline) decorations.push('underline');
-      if (isStrikethrough) decorations.push('line-through');
-      captionsDiv.style.textDecoration = decorations.length > 0 ? decorations.join(' ') : 'none';
+      if (isUnderline) decorations.push("underline");
+      if (isStrikethrough) decorations.push("line-through");
+      captionsDiv.style.textDecoration =
+        decorations.length > 0 ? decorations.join(" ") : "none";
     }
 
     // Load saved settings from localStorage on page load
     function loadSettings() {
-      const savedFontSize = localStorage.getItem('fontSize');
-      const savedFontFamily = localStorage.getItem('fontFamily');
-      const savedTextShadow = localStorage.getItem('textShadow');
-      const savedBackground = localStorage.getItem('backgroundColor');
-      const savedBold = localStorage.getItem('isBold');
-      const savedItalic = localStorage.getItem('isItalic');
-      const savedUnderline = localStorage.getItem('isUnderline');
-      const savedStrikethrough = localStorage.getItem('isStrikethrough');
-      const savedPreset = localStorage.getItem('preset');
+      const savedFontSize = localStorage.getItem("fontSize");
+      const savedFontFamily = localStorage.getItem("fontFamily");
+      const savedTextShadow = localStorage.getItem("textShadow");
+      const savedBackground = localStorage.getItem("backgroundColor");
+      const savedBold = localStorage.getItem("isBold");
+      const savedItalic = localStorage.getItem("isItalic");
+      const savedUnderline = localStorage.getItem("isUnderline");
+      const savedStrikethrough =
+        localStorage.getItem("isStrikethrough");
+      const savedPreset = localStorage.getItem("preset");
 
       // Load preset first (affects available colors)
       if (savedPreset) {
         switch (savedPreset) {
-          case 'gloomy':
+          case "gloomy":
             currentPaletteSet = gloomyPalettes;
             break;
-          case 'pastel':
+          case "pastel":
             currentPaletteSet = pastelPalettes;
             break;
-          case 'bright':
+          case "bright":
             currentPaletteSet = brightPalettes;
             break;
         }
       }
 
       if (savedFontSize) captionsDiv.style.fontSize = savedFontSize;
-      if (savedFontFamily) captionsDiv.style.fontFamily = savedFontFamily;
-      if (savedTextShadow) captionsDiv.style.textShadow = savedTextShadow;
+      if (savedFontFamily)
+        captionsDiv.style.fontFamily = savedFontFamily;
+      if (savedTextShadow)
+        captionsDiv.style.textShadow = savedTextShadow;
       if (savedBackground) {
         document.body.style.background = savedBackground;
-        document.body.style.backgroundSize = '400% 400%';
-        document.body.style.animation = 'gradientShift 30s ease infinite';
+        document.body.style.backgroundSize = "400% 400%";
+        document.body.style.animation =
+          "gradientShift 30s ease infinite";
       }
 
       // Load decoration states
-      if (savedBold !== null) isBold = savedBold === 'true';
-      if (savedItalic !== null) isItalic = savedItalic === 'true';
-      if (savedUnderline !== null) isUnderline = savedUnderline === 'true';
-      if (savedStrikethrough !== null) isStrikethrough = savedStrikethrough === 'true';
+      if (savedBold !== null) isBold = savedBold === "true";
+      if (savedItalic !== null) isItalic = savedItalic === "true";
+      if (savedUnderline !== null)
+        isUnderline = savedUnderline === "true";
+      if (savedStrikethrough !== null)
+        isStrikethrough = savedStrikethrough === "true";
       applyTextDecorations();
     }
 
     // Save current settings to localStorage
     function saveSettings() {
       // Determine current preset
-      let currentPreset = 'gloomy';
-      if (currentPaletteSet === pastelPalettes) currentPreset = 'pastel';
-      else if (currentPaletteSet === brightPalettes) currentPreset = 'bright';
+      let currentPreset = "gloomy";
+      if (currentPaletteSet === pastelPalettes)
+        currentPreset = "pastel";
+      else if (currentPaletteSet === brightPalettes)
+        currentPreset = "bright";
 
-      localStorage.setItem('fontSize', captionsDiv.style.fontSize || defaults.fontSize);
-      localStorage.setItem('fontFamily', captionsDiv.style.fontFamily || defaults.fontFamily);
-      localStorage.setItem('textShadow', captionsDiv.style.textShadow || defaults.textShadow);
-      localStorage.setItem('backgroundColor', document.body.style.background || defaults.backgroundColor);
-      localStorage.setItem('isBold', isBold);
-      localStorage.setItem('isItalic', isItalic);
-      localStorage.setItem('isUnderline', isUnderline);
-      localStorage.setItem('isStrikethrough', isStrikethrough);
-      localStorage.setItem('preset', currentPreset);
+      localStorage.setItem(
+        "fontSize",
+        captionsDiv.style.fontSize || defaults.fontSize,
+      );
+      localStorage.setItem(
+        "fontFamily",
+        captionsDiv.style.fontFamily || defaults.fontFamily,
+      );
+      localStorage.setItem(
+        "textShadow",
+        captionsDiv.style.textShadow || defaults.textShadow,
+      );
+      localStorage.setItem(
+        "backgroundColor",
+        document.body.style.background || defaults.backgroundColor,
+      );
+      localStorage.setItem("isBold", isBold);
+      localStorage.setItem("isItalic", isItalic);
+      localStorage.setItem("isUnderline", isUnderline);
+      localStorage.setItem("isStrikethrough", isStrikethrough);
+      localStorage.setItem("preset", currentPreset);
     }
 
     // Reset everything to defaults
@@ -720,25 +1537,25 @@
       currentPaletteSet = gloomyPalettes;
 
       saveSettings(); // Save the reset state
-      console.log('Reset to defaults!');
+      console.log("Reset to defaults!");
     }
 
     // Load saved settings when page loads
     loadSettings();
 
     recognition.onstart = () => {
-      console.log('✓ Speech recognition started successfully!');
+      console.log("✓ Speech recognition started successfully!");
     };
 
     recognition.onresult = (event) => {
-      let interimTranscript = '';
-      let finalTranscript = '';
+      let interimTranscript = "";
+      let finalTranscript = "";
 
       // Process all results from the last index
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const transcript = event.results[i][0].transcript;
         if (event.results[i].isFinal) {
-          finalTranscript += transcript + ' ';
+          finalTranscript += transcript + " ";
         } else {
           interimTranscript += transcript;
         }
@@ -747,31 +1564,42 @@
       // Use whichever transcript we have (interim or final) for filtering and commands
       let currentTranscript = interimTranscript || finalTranscript;
 
-      console.log('Caption:', currentTranscript, 'Final:', finalTranscript !== '');
+      console.log(
+        "Caption:",
+        currentTranscript,
+        "Final:",
+        finalTranscript !== "",
+      );
 
       // Filter out cuss words from the transcript
       let filteredTranscript = currentTranscript;
 
       for (let word of cussWords) {
-        let regex = new RegExp('\\b' + word + '\\b', 'gi');
-        let monkey = randomMonkey[Math.floor(Math.random() * randomMonkey.length)];
-        filteredTranscript = filteredTranscript.replace(regex, monkey);
+        let regex = new RegExp("\\b" + word + "\\b", "gi");
+        let monkey =
+          randomMonkey[
+          Math.floor(Math.random() * randomMonkey.length)
+          ];
+        filteredTranscript = filteredTranscript.replace(
+          regex,
+          monkey,
+        );
       }
 
       // Split into words for command detection
-      const transcriptArray = filteredTranscript.split(' ');
+      const transcriptArray = filteredTranscript.split(" ");
       const lastWord = transcriptArray[transcriptArray.length - 1];
 
       // Helper function: get last N words combined (for multi-word commands)
       function getLastNWords(n) {
-        if (transcriptArray.length < n) return '';
-        return transcriptArray.slice(-n).join('').toLowerCase();
+        if (transcriptArray.length < n) return "";
+        return transcriptArray.slice(-n).join("").toLowerCase();
       }
 
       // Detect color - try matching from longest phrase to shortest (up to 4 words)
       // Use current palette set for dynamic color detection
       const availableColors = Object.keys(currentPaletteSet);
-      let detectedColor = '';
+      let detectedColor = "";
       for (let wordCount = 4; wordCount >= 1; wordCount--) {
         let phrase = getLastNWords(wordCount);
         if (phrase && availableColors.includes(phrase)) {
@@ -780,44 +1608,54 @@
         }
       }
       // Fallback: check single word if no multi-word match
-      if (!detectedColor && availableColors.includes(lastWord.toLowerCase())) {
+      if (
+        !detectedColor &&
+        availableColors.includes(lastWord.toLowerCase())
+      ) {
         detectedColor = lastWord.toLowerCase();
       }
 
       // Execute color change command
       if (detectedColor && lastColorCommand !== detectedColor) {
-        console.log('Color detected! Changing to:', detectedColor);
+        console.log("Color detected! Changing to:", detectedColor);
         let palette = currentPaletteSet[detectedColor];
-        let gradientString = 'linear-gradient(45deg, ' + palette.join(', ') + ')';
-        console.log('Gradient string:', gradientString);
+        let gradientString =
+          "linear-gradient(45deg, " + palette.join(", ") + ")";
+        console.log("Gradient string:", gradientString);
         document.body.style.background = gradientString;
-        document.body.style.backgroundSize = '400% 400%';
+        document.body.style.backgroundSize = "400% 400%";
 
         // Rainbow gets continuous looping animation with larger background for smoother scrolling
-        if (detectedColor === 'rainbow') {
-          document.body.style.backgroundSize = '800% 800%';
-          document.body.style.animation = 'gradientLoop 3s linear infinite';
+        if (detectedColor === "rainbow") {
+          document.body.style.backgroundSize = "800% 800%";
+          document.body.style.animation =
+            "gradientLoop 3s linear infinite";
         } else {
-          document.body.style.backgroundSize = '400% 400%';
-          document.body.style.animation = 'gradientShift 30s ease infinite';
+          document.body.style.backgroundSize = "400% 400%";
+          document.body.style.animation =
+            "gradientShift 30s ease infinite";
         }
 
         lastColorCommand = detectedColor;
         saveSettings();
       }
 
-      if (sizeCommands.includes(lastWord.toLowerCase()) && lastSizeCommand !== lastWord.toLowerCase()) {
-        let currentSize = parseFloat(captionsDiv.style.fontSize) || 3;
+      if (
+        sizeCommands.includes(lastWord.toLowerCase()) &&
+        lastSizeCommand !== lastWord.toLowerCase()
+      ) {
+        let currentSize =
+          parseFloat(captionsDiv.style.fontSize) || 3;
         let newSize;
 
         switch (lastWord.toLowerCase()) {
-          case 'bigger':
+          case "bigger":
             newSize = currentSize + 0.75;
             break;
-          case 'smaller':
+          case "smaller":
             newSize = currentSize - 0.75;
             break;
-          case 'normal':
+          case "normal":
             newSize = 3;
             break;
           default:
@@ -826,14 +1664,14 @@
 
         // Keep size between 1 and 10
         newSize = Math.max(1, Math.min(10, newSize));
-        captionsDiv.style.fontSize = newSize + 'rem';
-        console.log('Font size changed to:', newSize + 'rem');
+        captionsDiv.style.fontSize = newSize + "rem";
+        console.log("Font size changed to:", newSize + "rem");
         lastSizeCommand = lastWord.toLowerCase();
         saveSettings();
       }
 
       // Detect Font - try matching from longest phrase to shortest (up to 4 words)
-      let detectedFont = '';
+      let detectedFont = "";
       for (let wordCount = 4; wordCount >= 1; wordCount--) {
         let phrase = getLastNWords(wordCount);
         if (phrase && phrase in fontFamilies) {
@@ -843,14 +1681,14 @@
       }
 
       if (detectedFont && lastFontCommand !== detectedFont) {
-        console.log('Font detected! Changing to:', detectedFont);
+        console.log("Font detected! Changing to:", detectedFont);
         captionsDiv.style.fontFamily = fontFamilies[detectedFont];
         lastFontCommand = detectedFont;
         saveSettings();
       }
 
       // Detect shadow command
-      let detectedShadow = '';
+      let detectedShadow = "";
       for (let wordCount = 2; wordCount >= 1; wordCount--) {
         let phrase = getLastNWords(wordCount);
         if (phrase && phrase in shadowCommands) {
@@ -860,14 +1698,18 @@
       }
 
       if (detectedShadow && lastShadowCommand !== detectedShadow) {
-        console.log('Shadow detected! Changing to:', detectedShadow);
-        captionsDiv.style.textShadow = shadowCommands[detectedShadow];
+        console.log(
+          "Shadow detected! Changing to:",
+          detectedShadow,
+        );
+        captionsDiv.style.textShadow =
+          shadowCommands[detectedShadow];
         lastShadowCommand = detectedShadow;
         saveSettings();
       }
 
       // Detect text decoration commands
-      let detectedDecoration = '';
+      let detectedDecoration = "";
       for (let wordCount = 2; wordCount >= 1; wordCount--) {
         let phrase = getLastNWords(wordCount);
         if (phrase && decorationCommands.includes(phrase)) {
@@ -876,56 +1718,82 @@
         }
       }
 
-      if (detectedDecoration && lastDecorationCommand !== detectedDecoration) {
+      if (
+        detectedDecoration &&
+        lastDecorationCommand !== detectedDecoration
+      ) {
         // Check if this is a positive command that was recently disabled
         let shouldBlock = false;
-        if (detectedDecoration === 'bold' && recentlyDisabledDecorations.bold) shouldBlock = true;
-        if (detectedDecoration === 'italic' && recentlyDisabledDecorations.italic) shouldBlock = true;
-        if (detectedDecoration === 'italics' && recentlyDisabledDecorations.italic) shouldBlock = true;
-        if (detectedDecoration === 'underline' && recentlyDisabledDecorations.underline) shouldBlock = true;
-        if (detectedDecoration === 'strikethrough' && recentlyDisabledDecorations.strikethrough) shouldBlock = true;
+        if (
+          detectedDecoration === "bold" &&
+          recentlyDisabledDecorations.bold
+        )
+          shouldBlock = true;
+        if (
+          detectedDecoration === "italic" &&
+          recentlyDisabledDecorations.italic
+        )
+          shouldBlock = true;
+        if (
+          detectedDecoration === "italics" &&
+          recentlyDisabledDecorations.italic
+        )
+          shouldBlock = true;
+        if (
+          detectedDecoration === "underline" &&
+          recentlyDisabledDecorations.underline
+        )
+          shouldBlock = true;
+        if (
+          detectedDecoration === "strikethrough" &&
+          recentlyDisabledDecorations.strikethrough
+        )
+          shouldBlock = true;
 
         if (!shouldBlock) {
-          console.log('Decoration detected! Command:', detectedDecoration);
+          console.log(
+            "Decoration detected! Command:",
+            detectedDecoration,
+          );
 
           switch (detectedDecoration) {
-            case 'bold':
+            case "bold":
               isBold = true;
               recentlyDisabledDecorations.bold = false; // Clear the block since it's being re-enabled
               break;
-            case 'nobold':
+            case "nobold":
               isBold = false;
               recentlyDisabledDecorations.bold = true; // Mark as recently disabled
               break;
-            case 'italic':
+            case "italic":
               isItalic = true;
               recentlyDisabledDecorations.italic = false;
               break;
-            case 'italics':
+            case "italics":
               isItalic = true;
               recentlyDisabledDecorations.italic = false;
               break;
-            case 'noitalic':
+            case "noitalic":
               isItalic = false;
               recentlyDisabledDecorations.italic = true;
               break;
-            case 'noitalics':
+            case "noitalics":
               isItalic = false;
               recentlyDisabledDecorations.italic = true;
               break;
-            case 'underline':
+            case "underline":
               isUnderline = true;
               recentlyDisabledDecorations.underline = false;
               break;
-            case 'nounderline':
+            case "nounderline":
               isUnderline = false;
               recentlyDisabledDecorations.underline = true;
               break;
-            case 'strikethrough':
+            case "strikethrough":
               isStrikethrough = true;
               recentlyDisabledDecorations.strikethrough = false;
               break;
-            case 'nostrikethrough':
+            case "nostrikethrough":
               isStrikethrough = false;
               recentlyDisabledDecorations.strikethrough = true;
               break;
@@ -935,23 +1803,29 @@
           lastDecorationCommand = detectedDecoration;
           saveSettings();
         } else {
-          console.log('Decoration command blocked (recently disabled):', detectedDecoration);
+          console.log(
+            "Decoration command blocked (recently disabled):",
+            detectedDecoration,
+          );
         }
       }
 
       // Detect preset commands
-      if (presetCommands.includes(lastWord.toLowerCase()) && lastPresetCommand !== lastWord.toLowerCase()) {
+      if (
+        presetCommands.includes(lastWord.toLowerCase()) &&
+        lastPresetCommand !== lastWord.toLowerCase()
+      ) {
         const presetName = lastWord.toLowerCase();
-        console.log('Preset detected! Switching to:', presetName);
+        console.log("Preset detected! Switching to:", presetName);
 
         switch (presetName) {
-          case 'gloomy':
+          case "gloomy":
             currentPaletteSet = gloomyPalettes;
             break;
-          case 'pastel':
+          case "pastel":
             currentPaletteSet = pastelPalettes;
             break;
-          case 'bright':
+          case "bright":
             currentPaletteSet = brightPalettes;
             break;
         }
@@ -961,9 +1835,50 @@
       }
 
       // Check for reset command
-      if (lastWord.toLowerCase() == resetCommand && lastResetCommand !== resetCommand) {
+      if (
+        lastWord.toLowerCase() == resetCommand &&
+        lastResetCommand !== resetCommand
+      ) {
         resetToDefaults();
         lastResetCommand = resetCommand;
+      }
+
+      // Detect Flappy Bird easter egg command
+      let detectedGame = "";
+      for (let wordCount = 2; wordCount >= 1; wordCount--) {
+        let phrase = getLastNWords(wordCount);
+        if (phrase && phrase === "flappybird") {
+          detectedGame = "flappybird";
+          break;
+        }
+      }
+
+      if (
+        detectedGame === "flappybird" &&
+        lastGameCommand !== detectedGame
+      ) {
+        console.log("Flappy Bird easter egg activated!");
+        startFlappyBird();
+        lastGameCommand = detectedGame;
+      }
+
+      // Detect Dino Run easter egg command
+      let detectedDinoGame = "";
+      for (let wordCount = 2; wordCount >= 1; wordCount--) {
+        let phrase = getLastNWords(wordCount);
+        if (phrase && (phrase === "dinorun" || phrase === "dino")) {
+          detectedDinoGame = "dinorun";
+          break;
+        }
+      }
+
+      if (
+        detectedDinoGame === "dinorun" &&
+        lastDinoCommand !== detectedDinoGame
+      ) {
+        console.log("Dino Run easter egg activated!");
+        startDinoRun();
+        lastDinoCommand = detectedDinoGame;
       }
 
       // Reset command tracking on final results so new commands can work
@@ -976,13 +1891,15 @@
 
         // Reset command tracking after 1000ms delay
         commandResetTimer = setTimeout(() => {
-          lastColorCommand = '';
-          lastSizeCommand = '';
-          lastFontCommand = '';
-          lastShadowCommand = '';
-          lastDecorationCommand = '';
-          lastPresetCommand = '';
-          lastResetCommand = '';
+          lastColorCommand = "";
+          lastSizeCommand = "";
+          lastFontCommand = "";
+          lastShadowCommand = "";
+          lastDecorationCommand = "";
+          lastPresetCommand = "";
+          lastResetCommand = "";
+          lastGameCommand = "";
+          lastDinoCommand = "";
           // Also clear decoration blocks so user can re-enable them naturally
           recentlyDisabledDecorations.bold = false;
           recentlyDisabledDecorations.italic = false;
@@ -998,8 +1915,11 @@
         // Filter the final transcript too
         let filteredFinal = finalTranscript;
         for (let word of cussWords) {
-          let regex = new RegExp('\\b' + word + '\\b', 'gi');
-          let monkey = randomMonkey[Math.floor(Math.random() * randomMonkey.length)];
+          let regex = new RegExp("\\b" + word + "\\b", "gi");
+          let monkey =
+            randomMonkey[
+            Math.floor(Math.random() * randomMonkey.length)
+            ];
           filteredFinal = filteredFinal.replace(regex, monkey);
         }
         captionsDiv.innerHTML = filteredFinal;
@@ -1007,37 +1927,48 @@
     };
 
     recognition.onerror = (event) => {
-      console.error('❌ Speech recognition error:', event.error);
-      console.error('Error details:', event);
+      console.error("❌ Speech recognition error:", event.error);
+      console.error("Error details:", event);
       recognitionError = true; // Mark that an error occurred
 
       // Don't auto-restart on these errors
-      if (event.error === 'no-speech' || event.error === 'audio-capture' || event.error === 'not-allowed') {
-        console.error('⚠️ Fatal error - NOT restarting automatically');
-        console.error('Check microphone permissions or try reloading the page');
+      if (
+        event.error === "no-speech" ||
+        event.error === "audio-capture" ||
+        event.error === "not-allowed"
+      ) {
+        console.error(
+          "⚠️ Fatal error - NOT restarting automatically",
+        );
+        console.error(
+          "Check microphone permissions or try reloading the page",
+        );
       }
     };
 
     recognition.onend = () => {
       // Only restart if no error occurred
       if (!recognitionError) {
-        console.log('Recognition ended normally, restarting in 100ms...');
+        console.log(
+          "Recognition ended normally, restarting in 100ms...",
+        );
         setTimeout(() => {
           try {
             recognition.start();
           } catch (e) {
-            console.error('Failed to restart recognition:', e);
+            console.error("Failed to restart recognition:", e);
           }
         }, 100); // Small delay to prevent rapid restart loops
       } else {
-        console.log('Recognition ended due to error - NOT restarting');
+        console.log(
+          "Recognition ended due to error - NOT restarting",
+        );
         recognitionError = false; // Reset for manual restart
       }
     };
 
-    console.log('Starting speech recognition...');
+    console.log("Starting speech recognition...");
     recognition.start();
-
   </script>
 </body>
 
