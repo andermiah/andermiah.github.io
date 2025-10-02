@@ -50,11 +50,12 @@
   padding: 20px;
   max-width: 80%;"></div>
   <script>
-    const recognition = new webkitSpeechRecognition();
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
     const captionsDiv = document.getElementById('captions');
 
-    cussWords = ['fuck', 'shit', 'bitch', 'piss', 'ass', 'cunt', 'pussy', 'faggot', 'dike', 'fag', 'asshole', 'jackass', 'dick', 'nigger', 'nigga', 'motherfucker', 'bullshit', 'cock', 'dumbass', 'hell', 'whore', 'fagot']
-    randomMonkey = ['🙊', '🙉', '🙈'];
+    const cussWords = ['fuck', 'shit', 'bitch', 'piss', 'ass', 'cunt', 'pussy', 'faggot', 'dike', 'fag', 'asshole', 'jackass', 'dick', 'nigger', 'nigga', 'motherfucker', 'bullshit', 'cock', 'dumbass', 'hell', 'whore', 'fagot'];
+    const randomMonkey = ['🙊', '🙉', '🙈'];
 
     // Color palettes - different shades for each color (dark, moody aesthetic)
     const colorPalettes = {
@@ -242,7 +243,7 @@
       sans: 'Arial, sans-serif',
       mono: 'Courier New, monospace',
       monospace: 'Courier New, monospace',
-      cursive: 'Comic Sans MS, cursive',
+      cursive: 'cursive',
       fantasy: 'Impact, fantasy',
 
       // Specific common fonts (single word names)
@@ -280,7 +281,14 @@
     let lastSizeCommand = '';
     let lastFontCommand = '';
     let lastShadowCommand = '';
+    let lastResetCommand = '';
     let shadowEnabled = false;
+
+    // Track recognition errors to prevent infinite restart loop
+    let recognitionError = false;
+
+    // Accumulate final transcript results
+    let finalTranscript = '';
 
     recognition.lang = 'en-US';
     recognition.continuous = true;
@@ -328,13 +336,26 @@
 
     recognition.onstart = () => {
       console.log('✓ Speech recognition started successfully!');
+      finalTranscript = ''; // Clear accumulated transcript on restart
     };
 
     recognition.onresult = (event) => {
       console.log('✓ onresult fired!'); // Debug: check if this event fires at all
-      // When continuous=true, we need to get the latest result
+
+      // Build the full transcript by combining final + interim results
+      let interimTranscript = '';
+
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcriptPiece = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalTranscript += transcriptPiece + ' ';
+        } else {
+          interimTranscript += transcriptPiece;
+        }
+      }
+
+      const transcript = finalTranscript + interimTranscript;
       const lastResultIndex = event.results.length - 1;
-      const transcript = event.results[lastResultIndex][0].transcript;
       const isFinal = event.results[lastResultIndex].isFinal;
 
       console.log('Caption:', transcript, 'Final:', isFinal);
@@ -349,8 +370,8 @@
       }
 
       // Split into words and bold the last word
-      transcriptArray = filteredTranscript.split(' ');
-      lastWord = transcriptArray[transcriptArray.length - 1];
+      const transcriptArray = filteredTranscript.split(' ');
+      const lastWord = transcriptArray[transcriptArray.length - 1];
 
       // Helper function: get last N words combined (for multi-word commands)
       function getLastNWords(n) {
@@ -379,13 +400,13 @@
       if (detectedColor && lastColorCommand !== detectedColor) {
         console.log('Color detected! Changing to:', detectedColor);
         let palette = colorPalettes[detectedColor];
-        let gradientString = 'linear-gradient(45deg, ' + palette.slice(1).join(', ') + ')';
+        let gradientString = 'linear-gradient(45deg, ' + palette.join(', ') + ')';
         console.log('Gradient string:', gradientString);
         document.body.style.background = gradientString;
         document.body.style.backgroundSize = '400% 400%';
         document.body.style.animation = 'gradientShift 30s ease infinite';
         lastColorCommand = detectedColor;
-        saveSettings(); // Save the new background color
+        saveSettings();
       }
 
       if (sizeCommands.includes(lastWord.toLowerCase()) && lastSizeCommand !== lastWord.toLowerCase()) {
@@ -411,7 +432,7 @@
         captionsDiv.style.fontSize = newSize + 'rem';
         console.log('Font size changed to:', newSize + 'rem');
         lastSizeCommand = lastWord.toLowerCase();
-        saveSettings(); // Save the new font size
+        saveSettings();
       }
 
       // Detect Font - try matching from longest phrase to shortest (up to 4 words)
@@ -428,7 +449,7 @@
         console.log('Font detected! Changing to:', detectedFont);
         captionsDiv.style.fontFamily = fontFamilies[detectedFont];
         lastFontCommand = detectedFont;
-        saveSettings(); // Save the new font family
+        saveSettings();
       }
 
       // Detect shadow command
@@ -445,13 +466,13 @@
         console.log('Shadow detected! Changing to:', detectedShadow);
         captionsDiv.style.textShadow = shadowCommands[detectedShadow];
         lastShadowCommand = detectedShadow;
-        saveSettings(); // Save the new text shadow
+        saveSettings();
       }
 
       // Check for reset command
-      if (lastWord.toLowerCase() === resetCommand && lastWord.toLowerCase() !== 'reset-done') {
+      if (lastWord.toLowerCase() === resetCommand && lastResetCommand !== resetCommand) {
         resetToDefaults();
-        // Prevent double-triggering - you can reuse the pattern from other commands
+        lastResetCommand = resetCommand;
       }
 
       // Reset command tracking on final results so new commands can work
@@ -460,10 +481,11 @@
         lastSizeCommand = '';
         lastFontCommand = '';
         lastShadowCommand = '';
+        lastResetCommand = '';
       }
 
 
-      if (transcriptArray.length == 1) {
+      if (transcriptArray.length === 1) {
         captionsDiv.innerHTML = '<strong>' + lastWord + '</strong>';
       } else {
         captionsDiv.innerHTML = (transcriptArray.slice(0, -1).join(' ') + ' <strong>' + lastWord + '</strong>');
@@ -471,12 +493,32 @@
     };
 
     recognition.onerror = (event) => {
-      console.error('Speech recognition error:', event.error);
+      console.error('❌ Speech recognition error:', event.error);
+      console.error('Error details:', event);
+      recognitionError = true; // Mark that an error occurred
+
+      // Don't auto-restart on these errors
+      if (event.error === 'no-speech' || event.error === 'audio-capture' || event.error === 'not-allowed') {
+        console.error('⚠️ Fatal error - NOT restarting automatically');
+        console.error('Check microphone permissions or try reloading the page');
+      }
     };
 
     recognition.onend = () => {
-      console.log('Recognition ended, restarting...');
-      recognition.start(); // Auto-restart for continuous captions
+      // Only restart if no error occurred
+      if (!recognitionError) {
+        console.log('Recognition ended normally, restarting in 100ms...');
+        setTimeout(() => {
+          try {
+            recognition.start();
+          } catch (e) {
+            console.error('Failed to restart recognition:', e);
+          }
+        }, 100); // Small delay to prevent rapid restart loops
+      } else {
+        console.log('Recognition ended due to error - NOT restarting');
+        recognitionError = false; // Reset for manual restart
+      }
     };
 
     console.log('Starting speech recognition...');
