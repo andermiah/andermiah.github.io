@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Captions</title>
+  <style>
+    @keyframes gradientShift {
+      0% {
+        background-position: 0% 50%;
+      }
+
+      50% {
+        background-position: 100% 50%;
+      }
+
+      100% {
+        background-position: 0% 50%;
+      }
+    }
+
+    body {
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: Arial, sans-serif;
+
+      /* Gradient setup - creates a large gradient */
+      background: linear-gradient(45deg, #1a1a2e, #16213e, #0f3460, #533483);
+      background-size: 400% 400%;
+      animation: gradientShift 30s ease infinite
+    }
+
+    #captions {
+      color: white;
+      font-size: 3rem;
+      text-align: center;
+      padding: 20px;
+      max-width: 80%;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="captions" style="  color: white;
+  font-size: 3rem;
+  text-align: center;
+  padding: 20px;
+  max-width: 80%;"></div>
+  <script>
+    const recognition = new webkitSpeechRecognition();
+    const captionsDiv = document.getElementById('captions');
+
+    cussWords = ['fuck', 'shit', 'bitch', 'piss', 'ass', 'cunt', 'pussy', 'faggot', 'dike', 'fag', 'asshole', 'jackass', 'dick', 'nigger', 'nigga', 'motherfucker', 'bullshit', 'cock', 'dumbass', 'hell', 'whore', 'fagot']
+    randomMonkey = ['🙊', '🙉', '🙈'];
+
+    // Color palettes - different shades for each color (dark, moody aesthetic)
+    const colorPalettes = {
+      red: ['#2b0000', '#4a0e0e', '#6b1a1a', '#8b2626'],     // Dark crimson/burgundy
+      read: ['#2b0000', '#4a0e0e', '#6b1a1a', '#8b2626'],    // Same as red (homophone)
+      blue: ['#1a1a2e', '#16213e', '#0f3460', '#533483'],    // Original gradient colors
+      green: ['#0d2818', '#1a3d2e', '#275240', '#346856'],   // Dark forest/emerald
+      orange: ['#3d2817', '#5c3a1f', '#7a4d28', '#996633'],  // Dark burnt orange/rust
+      purple: ['#1a0a2e', '#2d1b52', '#402c6b', '#533d85'],  // Deep violet/royal purple
+      pink: ['#2e1a2a', '#4a2d42', '#66405a', '#825372'],    // Deep rose/wine
+      yellow: ['#3d3d1a', '#5c5c2b', '#7a7a3c', '#99994d'],  // Dark gold/mustard
+      teal: ['#0a2e2e', '#1a4a4a', '#2a6666', '#3a8282'],    // Deep ocean/peacock
+      cyan: ['#0a2e2e', '#1a4a4a', '#2a6666', '#3a8282'],    // Same as teal (homophone)
+      brown: ['#2e1a0a', '#4a2f1a', '#66442a', '#82593a'],   // Dark chocolate/coffee
+      gray: ['#1a1a1a', '#2e2e2e', '#424242', '#565656'],    // Charcoal gray
+      grey: ['#1a1a1a', '#2e2e2e', '#424242', '#565656'],    // Same as gray (alternate spelling)
+      white: ['#3d3d3d', '#5c5c5c', '#7a7a7a', '#999999'],   // Dark gray (can't use true white with dark theme)
+      black: ['#0a0a0a', '#1a1a1a', '#2a2a2a', '#3a3a3a'],   // Very dark grays
+      silver: ['#2e2e3a', '#42425c', '#56567a', '#6a6a99'],  // Dark blue-gray metallic
+      gold: ['#4a3d1a', '#6b5c2b', '#8b7a3c', '#aa994d'],    // Rich antique gold
+      maroon: ['#2e0a0a', '#4a1a1a', '#662a2a', '#823a3a'],  // Deep burgundy/maroon
+      indigo: ['#0a0a2e', '#1a1a4a', '#2a2a66', '#3a3a82'],  // Deep indigo blue
+      violet: ['#2e0a2e', '#4a1a4a', '#662a66', '#823a82'],  // Deep violet
+      navy: ['#0a0a1a', '#16162e', '#222242', '#2e2e56'],    // Dark navy blue
+      crimson: ['#2e0a0a', '#4a1616', '#662222', '#822e2e'], // Deep crimson red
+      turquoise: ['#0a2e2e', '#1a4a4a', '#2a6666', '#3a8282'], // Deep turquoise (same as teal)
+      olive: ['#2e2e0a', '#4a4a1a', '#66662a', '#82823a'],   // Dark olive green
+      coral: ['#3d1a0a', '#5c2e1a', '#7a422a', '#99563a'],   // Dark coral/salmon
+      lavender: ['#2e1a3d', '#4a2e5c', '#66427a', '#825699'], // Dark lavender
+      mint: ['#0a2e1a', '#1a4a2e', '#2a6642', '#3a8256'],    // Dark mint green
+      amber: ['#3d2e0a', '#5c4a1a', '#7a662a', '#99823a'],   // Dark amber
+      magenta: ['#3d0a3d', '#5c1a5c', '#7a2a7a', '#993a99'], // Deep magenta
+      burgundy: ['#2e0a0a', '#4a1616', '#661a1a', '#822626'], // Dark burgundy wine
+      emerald: ['#0a2e0a', '#164a16', '#226622', '#2e822e'], // Deep emerald green
+      sapphire: ['#0a0a3d', '#1a1a5c', '#2a2a7a', '#3a3a99'], // Deep sapphire blue
+      ruby: ['#3d0a0a', '#5c1616', '#7a2222', '#992e2e'],    // Deep ruby red
+      jade: ['#0a2e1a', '#1a4a2e', '#2a6642', '#3a8256'],    // Dark jade green
+      copper: ['#3d1a0a', '#5c2e16', '#7a4222', '#99562e'],  // Dark copper/bronze
+      bronze: ['#3d2e0a', '#5c4a16', '#7a6622', '#99822e'],  // Dark bronze
+      charcoal: ['#1a1a1a', '#2e2e2e', '#424242', '#565656'], // Same as gray
+      slate: ['#1a2e2e', '#2e4a4a', '#426666', '#568282'],   // Blue-gray slate
+      lime: ['#2e3d0a', '#4a5c16', '#667a22', '#82992e'],    // Dark lime green
+      aqua: ['#0a3d3d', '#1a5c5c', '#2a7a7a', '#3a9999'],    // Dark aqua/cyan
+      peach: ['#3d2e1a', '#5c4a2e', '#7a6642', '#998256'],   // Dark peach/tan
+      rose: ['#3d1a2e', '#5c2e4a', '#7a4266', '#995682'],    // Deep rose pink
+      rust: ['#3d1a0a', '#5c2616', '#7a3222', '#993e2e'],    // Dark rust/iron oxide
+      scarlet: ['#3d0a0a', '#5c1a1a', '#7a2a2a', '#993a3a'], // Deep scarlet red
+      plum: ['#2e0a2e', '#4a1a4a', '#662a66', '#823a82'],    // Deep plum purple
+      cherry: ['#3d0a0a', '#5c1a1a', '#7a2626', '#993232'],  // Deep cherry red
+      chocolate: ['#2e1a0a', '#4a2f1a', '#66442a', '#82593a'], // Same as brown
+      coffee: ['#2e1a0a', '#4a2916', '#663a22', '#824a2e'],  // Dark coffee brown
+      tan: ['#3d2e1a', '#5c4a2e', '#7a6642', '#998256'],     // Dark tan/beige
+      beige: ['#3d3d2e', '#5c5c4a', '#7a7a66', '#999982'],   // Dark beige/cream
+
+      // Additional CSS named colors
+      darkred: ['#1a0000', '#2e0a0a', '#421414', '#561e1e'],
+      firebrick: ['#2e0a0a', '#4a1616', '#661e1e', '#822828'],
+      indianred: ['#3d1a1a', '#5c2e2e', '#7a4242', '#995656'],
+      lightcoral: ['#3d2020', '#5c3434', '#7a4848', '#995c5c'],
+      salmon: ['#3d2016', '#5c3424', '#7a4832', '#995c40'],
+      darksalmon: ['#3d2820', '#5c3c34', '#7a5048', '#99645c'],
+      lightsalmon: ['#3d2c1a', '#5c4028', '#7a5436', '#996844'],
+      darkorange: ['#3d1e0a', '#5c2e16', '#7a3e22', '#994e2e'],
+      tomato: ['#3d1a0a', '#5c2616', '#7a3222', '#993e2e'],
+      orangered: ['#3d0a0a', '#5c1616', '#7a2222', '#992e2e'],
+      lightyellow: ['#4a4a2e', '#6b6b42', '#8b8b56', '#aaaa6a'],
+      lemonchiffon: ['#4a4432', '#6b6448', '#8b845e', '#aaa474'],
+      papayawhip: ['#4a4238', '#6b6250', '#8b8268', '#aaa280'],
+      moccasin: ['#4a3c2e', '#6b5c42', '#8b7c56', '#aa9c6a'],
+      peachpuff: ['#4a3a2e', '#6b5842', '#8b7656', '#aa946a'],
+      khaki: ['#3d3a20', '#5c5634', '#7a7248', '#998e5c'],
+      darkkhaki: ['#3d3820', '#5c5234', '#7a6c48', '#99865c'],
+      darkgreen: ['#0a1a0a', '#162e16', '#224222', '#2e562e'],
+      forestgreen: ['#0a1a0a', '#162e16', '#224222', '#2e562e'],
+      limegreen: ['#1a2e0a', '#2e4a16', '#426622', '#56822e'],
+      lightgreen: ['#2e3d2e', '#4a5c4a', '#667a66', '#829982'],
+      palegreen: ['#2e3d2e', '#4a5c4a', '#667a66', '#829982'],
+      darkseagreen: ['#2e3d2e', '#4a5c4a', '#667a66', '#829982'],
+      springgreen: ['#0a2e16', '#164a24', '#226632', '#2e8240'],
+      seagreen: ['#0a2e1a', '#164a2e', '#226642', '#2e8256'],
+      mediumseagreen: ['#0a2e1a', '#164a2e', '#226642', '#2e8256'],
+      lightseagreen: ['#0a2e2e', '#1a4a4a', '#2a6666', '#3a8282'],
+      olivedrab: ['#2e2e0a', '#4a4a16', '#666622', '#82822e'],
+      yellowgreen: ['#2e3d0a', '#4a5c16', '#667a22', '#82992e'],
+      darkolivegreen: ['#2e2e0a', '#4a4a16', '#666622', '#82822e'],
+      greenyellow: ['#3d4a0a', '#5c6b16', '#7a8b22', '#99aa2e'],
+      chartreuse: ['#3d4a0a', '#5c6b16', '#7a8b22', '#99aa2e'],
+      lawngreen: ['#3d4a0a', '#5c6b16', '#7a8b22', '#99aa2e'],
+      mediumturquoise: ['#0a2e3d', '#1a4a5c', '#2a667a', '#3a8299'],
+      darkturquoise: ['#0a2e3d', '#1a4a5c', '#2a667a', '#3a8299'],
+      lightcyan: ['#2e3d3d', '#4a5c5c', '#667a7a', '#829999'],
+      paleturquoise: ['#2e3d3d', '#4a5c5c', '#667a7a', '#829999'],
+      aquamarine: ['#1a3d2e', '#2e5c4a', '#427a66', '#569982'],
+      mediumaquamarine: ['#1a3d2e', '#2e5c4a', '#427a66', '#569982'],
+      darkblue: ['#0a0a1a', '#16162e', '#222242', '#2e2e56'],
+      mediumblue: ['#0a0a2e', '#1a1a4a', '#2a2a66', '#3a3a82'],
+      midnightblue: ['#0a0a1a', '#16162e', '#222242', '#2e2e56'],
+      royalblue: ['#0a1a3d', '#162e5c', '#22427a', '#2e5699'],
+      cornflowerblue: ['#1a2e4a', '#2e4a6b', '#42668b', '#5682aa'],
+      lightsteelblue: ['#2e3d4a', '#4a5c6b', '#667a8b', '#8299aa'],
+      lightslategray: ['#1a2e3d', '#2e4a5c', '#42667a', '#568299'],
+      slategray: ['#1a2e3d', '#2e4a5c', '#42667a', '#568299'],
+      dodgerblue: ['#0a2e4a', '#1a4a6b', '#2a668b', '#3a82aa'],
+      steelblue: ['#1a2e3d', '#2e4a5c', '#42667a', '#568299'],
+      lightskyblue: ['#2e3d4a', '#4a5c6b', '#667a8b', '#8299aa'],
+      skyblue: ['#2e3d4a', '#4a5c6b', '#667a8b', '#8299aa'],
+      deepskyblue: ['#0a2e4a', '#1a4a6b', '#2a668b', '#3a82aa'],
+      lightblue: ['#2e3d4a', '#4a5c6b', '#667a8b', '#8299aa'],
+      powderblue: ['#2e3d4a', '#4a5c6b', '#667a8b', '#8299aa'],
+      cadetblue: ['#1a2e3d', '#2e4a5c', '#42667a', '#568299'],
+      darkviolet: ['#1a0a2e', '#2e1a4a', '#422a66', '#563a82'],
+      darkmagenta: ['#2e0a2e', '#4a1a4a', '#662a66', '#823a82'],
+      fuchsia: ['#3d0a3d', '#5c1a5c', '#7a2a7a', '#993a99'],
+      mediumvioletred: ['#3d0a2e', '#5c1a4a', '#7a2a66', '#993a82'],
+      mediumpurple: ['#2e1a3d', '#4a2e5c', '#66427a', '#823a99'],
+      mediumorchid: ['#3d1a3d', '#5c2e5c', '#7a427a', '#995699'],
+      darkorchid: ['#2e0a3d', '#4a1a5c', '#662a7a', '#823a99'],
+      darkslateblue: ['#1a1a2e', '#2e2e4a', '#424266', '#565682'],
+      blueviolet: ['#1a0a3d', '#2e1a5c', '#422a7a', '#563a99'],
+      slateblue: ['#1a1a3d', '#2e2e5c', '#42427a', '#565699'],
+      lightpink: ['#3d2e3d', '#5c4a5c', '#7a667a', '#998299'],
+      hotpink: ['#3d0a2e', '#5c1a4a', '#7a2a66', '#993a82'],
+      deeppink: ['#3d0a2e', '#5c1a4a', '#7a2a66', '#993a82'],
+      palevioletred: ['#3d1a2e', '#5c2e4a', '#7a4266', '#995682'],
+      saddlebrown: ['#2e1a0a', '#4a2616', '#663222', '#823e2e'],
+      sienna: ['#3d1a0a', '#5c2616', '#7a3222', '#993e2e'],
+      peru: ['#3d2a1a', '#5c402e', '#7a5642', '#996c56'],
+      sandybrown: ['#3d2c1a', '#5c4028', '#7a5436', '#996844'],
+      burlywood: ['#3d341a', '#5c4e2e', '#7a6842', '#998256'],
+      rosybrown: ['#3d2e2e', '#5c4a4a', '#7a6666', '#998282'],
+      wheat: ['#4a3d2e', '#6b5c4a', '#8b7a66', '#aa9982'],
+      snow: ['#4a4a4a', '#6b6b6b', '#8b8b8b', '#aaaaaa'],
+      honeydew: ['#3d4a3d', '#5c6b5c', '#7a8b7a', '#99aa99'],
+      mintcream: ['#3d4a4a', '#5c6b6b', '#7a8b8b', '#99aaaa'],
+      azure: ['#3d4a4a', '#5c6b6b', '#7a8b8b', '#99aaaa'],
+      ivory: ['#4a4a3d', '#6b6b5c', '#8b8b7a', '#aaaa99'],
+      floralwhite: ['#4a4a3d', '#6b6b5c', '#8b8b7a', '#aaaa99'],
+      ghostwhite: ['#4a4a4a', '#6b6b6b', '#8b8b8b', '#aaaaaa'],
+      whitesmoke: ['#4a4a4a', '#6b6b6b', '#8b8b8b', '#aaaaaa'],
+      seashell: ['#4a423d', '#6b625c', '#8b827a', '#aaa299'],
+      oldlace: ['#4a4238', '#6b6250', '#8b8268', '#aaa280'],
+      linen: ['#4a3d38', '#6b5c50', '#8b7a68', '#aa9980'],
+      antiquewhite: ['#4a3d2e', '#6b5c4a', '#8b7a66', '#aa9982'],
+      bisque: ['#4a3c2e', '#6b5c42', '#8b7c56', '#aa9c6a'],
+      blanchedalmond: ['#4a3e2e', '#6b5e42', '#8b7e56', '#aa9e6a'],
+      navajowhite: ['#4a3c2e', '#6b5c42', '#8b7c56', '#aa9c6a'],
+      cornsilk: ['#4a4232', '#6b6248', '#8b825e', '#aaa274'],
+      lavenderblush: ['#4a3d42', '#6b5c62', '#8b7a82', '#aa99a2'],
+      mistyrose: ['#4a3d3d', '#6b5c5c', '#8b7a7a', '#aa9999'],
+      darkgray: ['#2e2e2e', '#424242', '#565656', '#6a6a6a'],
+      darkgrey: ['#2e2e2e', '#424242', '#565656', '#6a6a6a'],
+      dimgray: ['#1a1a1a', '#2e2e2e', '#424242', '#565656'],
+      dimgrey: ['#1a1a1a', '#2e2e2e', '#424242', '#565656'],
+      lightgray: ['#3d3d3d', '#5c5c5c', '#7a7a7a', '#999999'],
+      lightgrey: ['#3d3d3d', '#5c5c5c', '#7a7a7a', '#999999'],
+      gainsboro: ['#3d3d3d', '#5c5c5c', '#7a7a7a', '#999999'],
+      lightslategrey: ['#1a2e3d', '#2e4a5c', '#42667a', '#568299'],
+      slategrey: ['#1a2e3d', '#2e4a5c', '#42667a', '#568299'],
+      darkslategray: ['#0a1a1a', '#162e2e', '#224242', '#2e5656'],
+      darkslategrey: ['#0a1a1a', '#162e2e', '#224242', '#2e5656']
+    };
+
+    const colors = Object.keys(colorPalettes); // ['red', 'read', 'blue', 'green', 'orange']
+
+    // Font size control commands
+    const sizeCommands = ['bigger', 'smaller', 'normal'];
+
+    // Reset command
+    const resetCommand = 'reset';
+
+    // Default settings (original state)
+    const defaults = {
+      backgroundColor: 'linear-gradient(45deg, #1a1a2e, #16213e, #0f3460, #533483)',
+      backgroundSize: '400% 400%',
+      backgroundAnimation: 'gradientShift 30s ease infinite',
+      fontSize: '3rem',
+      fontFamily: 'Arial, sans-serif',
+      textShadow: 'none'
+    };
+
+    // Font families - both generic and specific fonts
+    const fontFamilies = {
+      // Generic categories
+      serif: 'Georgia, serif',
+      sans: 'Arial, sans-serif',
+      mono: 'Courier New, monospace',
+      monospace: 'Courier New, monospace',
+      cursive: 'Comic Sans MS, cursive',
+      fantasy: 'Impact, fantasy',
+
+      // Specific common fonts (single word names)
+      arial: 'Arial, sans-serif',
+      ariel: 'Arial, sans-serif',
+      georgia: 'Georgia, serif',
+      courier: 'Courier New, monospace',
+      verdana: 'Verdana, sans-serif',
+      impact: 'Impact, fantasy',
+      helvetica: 'Helvetica, sans-serif',
+
+      // Multi-word fonts (user says "comic sans" -> "comicsans")
+      comicsans: 'Comic Sans MS, cursive',
+      timesnewroman: 'Times New Roman, serif',
+      couriernew: 'Courier New, monospace',
+      trebuchet: 'Trebuchet MS, sans-serif',
+      palatino: 'Palatino Linotype, serif',
+      garamond: 'Garamond, serif',
+      bookman: 'Bookman, serif',
+      avenir: 'Avenir, sans-serif',
+      rockwell: 'Rockwell, serif'
+    };
+
+    // Text shadow commands
+    const shadowCommands = {
+      shadow: '2px 2px 4px rgba(0,0,0,0.8)',
+      glow: '0 0 10px #fff, 0 0 20px #fff',
+      noshadow: 'none'
+    };
+
+    const shadows = Object.keys(shadowCommands);
+
+    // Track last executed commands to avoid double-triggering
+    let lastColorCommand = '';
+    let lastSizeCommand = '';
+    let lastFontCommand = '';
+    let lastShadowCommand = '';
+    let shadowEnabled = false;
+
+    recognition.lang = 'en-US';
+    recognition.continuous = true;
+    recognition.interimResults = true; // Show interim results for live captions
+
+    // Load saved settings from localStorage on page load
+    function loadSettings() {
+      const savedFontSize = localStorage.getItem('fontSize');
+      const savedFontFamily = localStorage.getItem('fontFamily');
+      const savedTextShadow = localStorage.getItem('textShadow');
+      const savedBackground = localStorage.getItem('backgroundColor');
+
+      if (savedFontSize) captionsDiv.style.fontSize = savedFontSize;
+      if (savedFontFamily) captionsDiv.style.fontFamily = savedFontFamily;
+      if (savedTextShadow) captionsDiv.style.textShadow = savedTextShadow;
+      if (savedBackground) {
+        document.body.style.background = savedBackground;
+        document.body.style.backgroundSize = '400% 400%';
+        document.body.style.animation = 'gradientShift 30s ease infinite';
+      }
+    }
+
+    // Save current settings to localStorage
+    function saveSettings() {
+      localStorage.setItem('fontSize', captionsDiv.style.fontSize || defaults.fontSize);
+      localStorage.setItem('fontFamily', captionsDiv.style.fontFamily || defaults.fontFamily);
+      localStorage.setItem('textShadow', captionsDiv.style.textShadow || defaults.textShadow);
+      localStorage.setItem('backgroundColor', document.body.style.background || defaults.backgroundColor);
+    }
+
+    // Reset everything to defaults
+    function resetToDefaults() {
+      document.body.style.background = defaults.backgroundColor;
+      document.body.style.backgroundSize = defaults.backgroundSize;
+      document.body.style.animation = defaults.backgroundAnimation;
+      captionsDiv.style.fontSize = defaults.fontSize;
+      captionsDiv.style.fontFamily = defaults.fontFamily;
+      captionsDiv.style.textShadow = defaults.textShadow;
+      saveSettings(); // Save the reset state
+      console.log('Reset to defaults!');
+    }
+
+    // Load saved settings when page loads
+    loadSettings();
+
+    recognition.onstart = () => {
+      console.log('✓ Speech recognition started successfully!');
+    };
+
+    recognition.onresult = (event) => {
+      console.log('✓ onresult fired!'); // Debug: check if this event fires at all
+      // When continuous=true, we need to get the latest result
+      const lastResultIndex = event.results.length - 1;
+      const transcript = event.results[lastResultIndex][0].transcript;
+      const isFinal = event.results[lastResultIndex].isFinal;
+
+      console.log('Caption:', transcript, 'Final:', isFinal);
+
+      // Filter out cuss words from the transcript
+      let filteredTranscript = transcript;
+
+      for (let word of cussWords) {
+        let regex = new RegExp('\\b' + word + '\\b', 'gi');
+        let monkey = randomMonkey[Math.floor(Math.random() * randomMonkey.length)];
+        filteredTranscript = filteredTranscript.replace(regex, monkey);
+      }
+
+      // Split into words and bold the last word
+      transcriptArray = filteredTranscript.split(' ');
+      lastWord = transcriptArray[transcriptArray.length - 1];
+
+      // Helper function: get last N words combined (for multi-word commands)
+      function getLastNWords(n) {
+        if (transcriptArray.length < n) return '';
+        return transcriptArray.slice(-n).join('').toLowerCase();
+      }
+
+      // Debug: log the last word to see what we're checking
+      console.log('Last word:', lastWord);
+
+      // Detect color - try matching from longest phrase to shortest (up to 4 words)
+      let detectedColor = '';
+      for (let wordCount = 4; wordCount >= 1; wordCount--) {
+        let phrase = getLastNWords(wordCount);
+        if (phrase && colors.includes(phrase)) {
+          detectedColor = phrase;
+          break; // Found a match, stop searching
+        }
+      }
+      // Fallback: check single word if no multi-word match
+      if (!detectedColor && colors.includes(lastWord.toLowerCase())) {
+        detectedColor = lastWord.toLowerCase();
+      }
+
+      // Execute color change command
+      if (detectedColor && lastColorCommand !== detectedColor) {
+        console.log('Color detected! Changing to:', detectedColor);
+        let palette = colorPalettes[detectedColor];
+        let gradientString = 'linear-gradient(45deg, ' + palette.slice(1).join(', ') + ')';
+        console.log('Gradient string:', gradientString);
+        document.body.style.background = gradientString;
+        document.body.style.backgroundSize = '400% 400%';
+        document.body.style.animation = 'gradientShift 30s ease infinite';
+        lastColorCommand = detectedColor;
+        saveSettings(); // Save the new background color
+      }
+
+      if (sizeCommands.includes(lastWord.toLowerCase()) && lastSizeCommand !== lastWord.toLowerCase()) {
+        let currentSize = parseFloat(captionsDiv.style.fontSize) || 3;
+        let newSize;
+
+        switch (lastWord.toLowerCase()) {
+          case 'bigger':
+            newSize = currentSize + 0.75;
+            break;
+          case 'smaller':
+            newSize = currentSize - 0.75;
+            break;
+          case 'normal':
+            newSize = 3;
+            break;
+          default:
+            newSize = currentSize;
+        }
+
+        // Keep size between 1 and 10
+        newSize = Math.max(1, Math.min(10, newSize));
+        captionsDiv.style.fontSize = newSize + 'rem';
+        console.log('Font size changed to:', newSize + 'rem');
+        lastSizeCommand = lastWord.toLowerCase();
+        saveSettings(); // Save the new font size
+      }
+
+      // Detect Font - try matching from longest phrase to shortest (up to 4 words)
+      let detectedFont = '';
+      for (let wordCount = 4; wordCount >= 1; wordCount--) {
+        let phrase = getLastNWords(wordCount);
+        if (phrase && phrase in fontFamilies) {
+          detectedFont = phrase;
+          break; // Found a match, stop searching
+        }
+      }
+
+      if (detectedFont && lastFontCommand !== detectedFont) {
+        console.log('Font detected! Changing to:', detectedFont);
+        captionsDiv.style.fontFamily = fontFamilies[detectedFont];
+        lastFontCommand = detectedFont;
+        saveSettings(); // Save the new font family
+      }
+
+      // Detect shadow command
+      let detectedShadow = '';
+      for (let wordCount = 2; wordCount >= 1; wordCount--) {
+        let phrase = getLastNWords(wordCount);
+        if (phrase && phrase in shadowCommands) {
+          detectedShadow = phrase;
+          break; // Found a match, stop searching
+        }
+      }
+
+      if (detectedShadow && lastShadowCommand !== detectedShadow) {
+        console.log('Shadow detected! Changing to:', detectedShadow);
+        captionsDiv.style.textShadow = shadowCommands[detectedShadow];
+        lastShadowCommand = detectedShadow;
+        saveSettings(); // Save the new text shadow
+      }
+
+      // Check for reset command
+      if (lastWord.toLowerCase() === resetCommand && lastWord.toLowerCase() !== 'reset-done') {
+        resetToDefaults();
+        // Prevent double-triggering - you can reuse the pattern from other commands
+      }
+
+      // Reset command tracking on final results so new commands can work
+      if (isFinal) {
+        lastColorCommand = '';
+        lastSizeCommand = '';
+        lastFontCommand = '';
+        lastShadowCommand = '';
+      }
+
+
+      if (transcriptArray.length == 1) {
+        captionsDiv.innerHTML = '<strong>' + lastWord + '</strong>';
+      } else {
+        captionsDiv.innerHTML = (transcriptArray.slice(0, -1).join(' ') + ' <strong>' + lastWord + '</strong>');
+      }
+    };
+
+    recognition.onerror = (event) => {
+      console.error('Speech recognition error:', event.error);
+    };
+
+    recognition.onend = () => {
+      console.log('Recognition ended, restarting...');
+      recognition.start(); // Auto-restart for continuous captions
+    };
+
+    console.log('Starting speech recognition...');
+    recognition.start();
+
+  </script>
+</body>
+
+</html>
