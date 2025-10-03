@@ -100,29 +100,249 @@
     const captionsDiv = document.getElementById("captions");
 
     const cussWords = [
+      // F-word variants
       "fuck",
+      "fucked",
+      "fucker",
+      "fucking",
+      "fucks",
+      "fuk",
+      "fck",
+      "motherfucker",
+      "motherfucking",
+
+      // S-word variants
       "shit",
+      "shitty",
+      "shits",
+      "shitting",
+      "shite",
+      "bullshit",
+      "horseshit",
+      "dipshit",
+      "apeshit",
+      "batshit",
+      "chickenshit",
+      "jackshit",
+      "dogshit",
+
+      // B-word variants
       "bitch",
-      "piss",
+      "bitches",
+      "bitching",
+      "bitchy",
+      "biotch",
+      "biatch",
+      "sonofabitch",
+
+      // Ass variants
       "ass",
-      "cunt",
-      "pussy",
-      "faggot",
-      "dike",
-      "fag",
+      "arse",
       "asshole",
+      "arsehole",
+      "asswipe",
+      "asshat",
+      "assfuck",
+      "assface",
+      "dumbass",
+      "fatass",
       "jackass",
+      "badass",
+      "smartass",
+      "wiseass",
+      "halfassed",
+      "butthole",
+
+      // C-word variants
+      "cunt",
+      "cunts",
+      "cunty",
+
+      // D-word variants
+      "damn",
+      "damned",
+      "dammit",
+      "goddamn",
+      "goddammit",
+      "damnit",
       "dick",
+      "dicks",
+      "dickhead",
+      "dicknose",
+      "dickweed",
+      "dickface",
+
+      // P-word variants
+      "piss",
+      "pissed",
+      "pissing",
+      "pisser",
+      "pissoff",
+      "pussy",
+      "pussies",
+      "prick",
+      "pricks",
+
+      // Hell variants
+      "hell",
+      "hella",
+      "hellhole",
+
+      // Cock variants
+      "cock",
+      "cocks",
+      "cocksucker",
+      "cocksucking",
+
+      // Slurs (racial/homophobic/ableist)
       "nigger",
       "nigga",
-      "motherfucker",
-      "bullshit",
-      "cock",
-      "dumbass",
-      "hell",
-      "whore",
+      "niggas",
+      "faggot",
+      "faggots",
+      "fag",
+      "fags",
       "fagot",
+      "dyke",
+      "dike",
+      "retard",
+      "retarded",
+      "retards",
+      "spic",
+      "spics",
+      "chink",
+      "chinks",
+      "gook",
+      "kike",
+      "wetback",
+      "beaner",
+
+      // Sex-related
+      "whore",
+      "whores",
+      "slut",
+      "sluts",
+      "slutty",
+      "skank",
+      "skanks",
+      "skanky",
+      "hoe",
+      "hoes",
+      "hooker",
+      "pimp",
+      "pimping",
+
+      // Body parts (vulgar)
+      "tits",
+      "titty",
+      "titties",
+      "boob",
+      "boobs",
+      "booby",
+      "boobies",
+      "tit",
+      "balls",
+      "ballsack",
+      "nutsack",
+      "nuts",
+
+      // Other vulgar terms
+      "bastard",
+      "bastards",
+      "crap",
+      "crappy",
+      "poop",
+      "turd",
+      "douche",
+      "douchebag",
+      "douchecanoe",
+      "schmuck",
+      "wanker",
+      "wank",
+      "tosser",
+      "bollocks",
+      "bloody",
+      "bugger",
+      "sod",
+      "sodding",
+      "git",
+      "knob",
+      "knobhead",
+      "twat",
+      "twats",
+      "prat",
+      "pillock",
+      "bellend",
+      "minge",
+      "wazzock",
+      "numpty",
+      "tosspot",
+      "gobshite",
+      "shag",
+      "shagged",
+      "shagging",
+      "shat",
+      "toss",
+      "screw",
+      "screwed",
+      "screwing",
+      "scumbag",
+      "mofo",
+      "sonovabitch",
+      "sob",
+      "pecker",
+      "weenie",
+      "wiener",
+      "poon",
+      "poontang",
+      "cooter",
+      "coochie",
+      "beotch",
+      "ho",
+
+      // Internet/text speak variants
+      "wtf",
+      "stfu",
+      "gtfo",
+      "omfg",
+      "milf",
+      "dilf",
+      "pos",
+      "af",
+      "lmfao",
+      "rotfl",
+
+      // Compound/creative
+      "shithead",
+      "shitface",
+      "shitstain",
+      "shitbag",
+      "shitshow",
+      "clusterfuck",
+      "fuckface",
+      "fuckhead",
+      "fuckwit",
+      "fucktard",
+      "buttfuck",
+      "mindfuck",
+      "ratbastard",
+      "asslicker",
+      "assmunch",
+      "buttmunch",
+      "dickwad",
+      "pissbaby",
+      "pissant",
+      "cumstain",
+      "jizz",
+      "jizzed",
+      "wankstain",
+      "fuckboy",
+      "fuckboi",
     ];
+
+    // Pre-compile regex patterns for performance (only done once at startup)
+    const cussWordsRegex = cussWords.map(word => new RegExp("\\b" + word + "\\b", "gi"));
+
     const randomMonkey = ["🙊", "🙉", "🙈"];
 
     // ========== FLAPPY BIRD EASTER EGG ==========
@@ -1571,11 +1791,10 @@
         finalTranscript !== "",
       );
 
-      // Filter out cuss words from the transcript
+      // Filter out cuss words from the transcript (using pre-compiled regexes)
       let filteredTranscript = currentTranscript;
 
-      for (let word of cussWords) {
-        let regex = new RegExp("\\b" + word + "\\b", "gi");
+      for (let regex of cussWordsRegex) {
         let monkey =
           randomMonkey[
           Math.floor(Math.random() * randomMonkey.length)
@@ -1912,10 +2131,9 @@
       if (interimTranscript) {
         captionsDiv.innerHTML = filteredTranscript;
       } else if (finalTranscript) {
-        // Filter the final transcript too
+        // Filter the final transcript too (using pre-compiled regexes)
         let filteredFinal = finalTranscript;
-        for (let word of cussWords) {
-          let regex = new RegExp("\\b" + word + "\\b", "gi");
+        for (let regex of cussWordsRegex) {
           let monkey =
             randomMonkey[
             Math.floor(Math.random() * randomMonkey.length)
