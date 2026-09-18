@@ -3,24 +3,40 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Jeremiah Anderson — Full-Stack Engineer</title>
-  <meta name="description" content="Full-Stack Engineer. Building tools that solve real problems.">
+  <title>Jeremiah Anderson | Full-Stack Developer, Louisville KY</title>
+  <meta name="description" content="Full-stack developer in the Louisville, KY area. I build websites for small businesses and custom Rails web apps with logins, billing and dashboards. Open to projects, a summer 2027 internship, and developer roles.">
   <meta name="theme-color" content="#F5F4F0">
+  <link rel="canonical" href="https://andermiah.github.io/">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='rgb(20,148,132)'/><text x='16' y='24' text-anchor='middle' font-family='system-ui,sans-serif' font-size='22' font-weight='700' fill='white'>J</text></svg>">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://andermiah.github.io/">
-  <meta property="og:title" content="Jeremiah Anderson — Full-Stack Engineer">
-  <meta property="og:description" content="Full-Stack Engineer building tools that solve real problems.">
-  <meta property="og:image" content="https://andermiah.github.io/og-image.svg">
+  <meta property="og:title" content="Jeremiah Anderson | Full-Stack Developer, Louisville KY">
+  <meta property="og:description" content="Websites for small businesses and custom Rails web apps. Available for projects, internships, and developer roles.">
+  <meta property="og:image" content="https://andermiah.github.io/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="Jeremiah Anderson — Full-Stack Engineer">
+  <meta property="og:image:alt" content="Jeremiah Anderson, full-stack developer. Websites and web apps, Louisville KY.">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Jeremiah Anderson — Full-Stack Engineer">
-  <meta name="twitter:description" content="Full-Stack Engineer building tools that solve real problems.">
-  <meta name="twitter:image" content="https://andermiah.github.io/og-image.svg">
+  <meta name="twitter:title" content="Jeremiah Anderson | Full-Stack Developer, Louisville KY">
+  <meta name="twitter:description" content="Websites for small businesses and custom Rails web apps. Available for projects, internships, and developer roles.">
+  <meta name="twitter:image" content="https://andermiah.github.io/og-image.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    "name": "Jeremiah Anderson",
+    "jobTitle": "Full-Stack Developer",
+    "url": "https://andermiah.github.io/",
+    "email": "mailto:andermiah@gmail.com",
+    "address": { "@type": "PostalAddress", "addressLocality": "Louisville", "addressRegion": "KY", "addressCountry": "US" },
+    "sameAs": [
+      "https://github.com/andermiah",
+      "https://www.linkedin.com/in/jeremiah-anderson-8a58b4362"
+    ]
+  }
+  </script>
   <script>
     const palettes = [
       { oklch: 'oklch(96.7% 0.0053 95.3)',  hex: '#F5F4F0' },
@@ -38,16 +54,17 @@
   </script>
   <style>
     :root {
-      --bg:           oklch(96.7% 0.0053 95.3);
-      --surface:      oklch(100% 0 0 / 0.68);
-      --border:       oklch(91.2% 0.0081 99.0);
-      --border-mid:   oklch(84.1% 0.0096 100.1);
-      --fg:           oklch(21.4% 0.0041 84.6);
-      --fg-2:         oklch(46.4% 0.0064 95.3);
-      --fg-3:         oklch(68.2% 0.0087 99.1);
-      --accent:       oklch(60.0% 0.1039 184.7);
-      --accent-dark:  oklch(51.1% 0.0861 186.4);
-      --accent-faint: oklch(98.4% 0.0139 186.3);
+      --bg:            oklch(96.7% 0.0053 95.3);
+      --surface:       oklch(100% 0 0 / 0.68);
+      --border:        oklch(91.2% 0.0081 99.0);
+      --border-mid:    oklch(84.1% 0.0096 100.1);
+      --fg:            oklch(21.4% 0.0041 84.6);
+      --fg-2:          oklch(46.4% 0.0064 95.3);
+      --fg-3:          oklch(68.2% 0.0087 99.1);
+      --accent:        oklch(60.0% 0.1039 184.7);
+      --accent-dark:   oklch(51.1% 0.0861 186.4);
+      --accent-darker: oklch(44.0% 0.0800 186.4);
+      --accent-faint:  oklch(98.4% 0.0139 186.3);
       --mono: 'IBM Plex Mono', 'Courier New', monospace;
       --sans: 'Inter', system-ui, sans-serif;
       --radius-sm: 4px;
@@ -55,9 +72,9 @@
       --radius-lg: 10px;
     }
 
-*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
-    html { height: 100%; }
+    html { height: 100%; scroll-behavior: smooth; }
 
     body {
       background: var(--bg);
@@ -88,7 +105,7 @@
       font-weight: 500;
       color: var(--fg);
       letter-spacing: -0.3px;
-      cursor: default;
+      text-decoration: none;
     }
     .wordmark span { color: var(--accent); }
 
@@ -116,8 +133,26 @@
       width: 100%;
     }
 
+    section { margin-bottom: 4rem; scroll-margin-top: 1.5rem; }
+    section:last-child { margin-bottom: 0; }
+
     /* ── Hero ── */
-    .hero { margin-bottom: 4rem; }
+    .hero {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 2.5rem;
+      align-items: start;
+    }
+
+    .hero-photo {
+      width: 136px;
+      height: 136px;
+      border-radius: 18px;
+      object-fit: cover;
+      border: 1px solid var(--border-mid);
+      background: var(--surface);
+      margin-top: 0.75rem;
+    }
 
     .eyebrow {
       display: inline-flex;
@@ -152,6 +187,7 @@
       letter-spacing: -0.04em;
       line-height: 1.2;
       margin-bottom: 1rem;
+      max-width: 560px;
     }
 
     .bio {
@@ -161,34 +197,53 @@
       max-width: 540px;
       margin-bottom: 1.5rem;
     }
+    .bio a { color: var(--fg); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--border-mid); }
+    .bio a:hover { text-decoration-color: var(--accent); }
 
-    .contact-links {
+    .actions {
       display: flex;
       gap: 0.625rem;
       flex-wrap: wrap;
+      align-items: center;
     }
 
-    .contact-link {
+    .btn {
       display: inline-flex;
       align-items: center;
       gap: 6px;
       font-family: var(--mono);
       font-size: 0.75rem;
       font-weight: 500;
-      color: var(--fg-2);
       text-decoration: none;
-      padding: 6px 12px;
-      border: 1px solid var(--border-mid);
+      padding: 7px 13px;
       border-radius: var(--radius-md);
+      border: 1px solid var(--border-mid);
       background: var(--surface);
-      transition: color 0.2s, border-color 0.2s;
+      color: var(--fg-2);
+      transition: color 0.2s, border-color 0.2s, background 0.2s;
     }
-    .contact-link:hover {
-      color: var(--fg);
-      border-color: var(--fg-3);
-    }
+    .btn:hover { color: var(--fg); border-color: var(--fg-3); }
 
-    /* ── Projects ── */
+    .btn-primary {
+      background: var(--accent-dark);
+      border-color: var(--accent-dark);
+      color: white;
+    }
+    .btn-primary:hover { background: var(--accent-darker); border-color: var(--accent-darker); color: white; }
+
+    .icon-links {
+      display: flex;
+      gap: 0.875rem;
+      margin-left: 0.375rem;
+    }
+    .icon-links a {
+      color: var(--fg-3);
+      display: inline-flex;
+      transition: color 0.2s;
+    }
+    .icon-links a:hover { color: var(--fg); }
+
+    /* ── Sections ── */
     .section-label {
       font-family: var(--mono);
       font-size: 0.6875rem;
@@ -199,13 +254,14 @@
       margin-bottom: 1.25rem;
     }
 
-    .projects-grid {
+    .cards {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
       gap: 1rem;
     }
+    .cards-single { grid-template-columns: 1fr; }
 
-    .project-card {
+    .card {
       border: 1px solid var(--border);
       border-radius: var(--radius-lg);
       background: var(--surface);
@@ -217,44 +273,45 @@
       color: inherit;
       transition: border-color 0.2s, box-shadow 0.2s;
     }
-    .project-card:hover {
+    a.card:hover {
       border-color: var(--border-mid);
       box-shadow: 0 2px 16px oklch(0% 0 0 / 0.06);
     }
 
-    .project-header {
+    .card-header {
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
       gap: 1rem;
     }
 
-    .project-name {
+    .card-name {
       font-size: 0.9375rem;
       font-weight: 600;
       letter-spacing: -0.02em;
       color: var(--fg);
     }
 
-    .project-arrow {
+    .card-arrow {
       color: var(--fg-3);
       font-size: 0.8125rem;
       flex-shrink: 0;
       transition: transform 0.2s, color 0.2s;
     }
-    .project-card:hover .project-arrow {
+    a.card:hover .card-arrow {
       color: var(--accent);
       transform: translate(2px, -2px);
     }
 
-    .project-desc {
+
+    .card-desc {
       font-size: 0.8125rem;
       color: var(--fg-2);
       line-height: 1.65;
       flex: 1;
     }
 
-    .project-tags {
+    .tags {
       display: flex;
       flex-wrap: wrap;
       gap: 0.375rem;
@@ -270,6 +327,64 @@
       border-radius: var(--radius-sm);
       padding: 3px 8px;
     }
+
+    .section-note {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      color: var(--fg-2);
+      margin-top: 1rem;
+    }
+
+    /* ── Open source list ── */
+    .sub-label { margin-top: 2rem; }
+
+    .repo-list {
+      list-style: none;
+      border-top: 1px solid var(--border);
+    }
+    .repo {
+      display: grid;
+      grid-template-columns: 150px 1fr auto;
+      gap: 1rem;
+      align-items: baseline;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .repo-name {
+      font-size: 0.875rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      color: var(--fg);
+      text-decoration: none;
+    }
+    .repo-name:hover { color: var(--accent); }
+    .repo-desc { font-size: 0.8125rem; color: var(--fg-2); line-height: 1.6; }
+
+    /* ── Prose sections ── */
+    .prose {
+      font-size: 0.9375rem;
+      color: var(--fg-2);
+      line-height: 1.75;
+      max-width: 600px;
+    }
+    .prose p + p { margin-top: 0.875rem; }
+    .prose a { color: var(--fg); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--border-mid); }
+    .prose a:hover { text-decoration-color: var(--accent); }
+
+    h2 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      margin-bottom: 0.75rem;
+    }
+
+    .contact-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      background: var(--surface);
+      padding: 1.75rem;
+    }
+    .contact-card .actions { margin-top: 1.25rem; }
 
     /* ── Footer ── */
     .site-footer {
@@ -288,43 +403,40 @@
       color: var(--fg-3);
     }
 
-    .coffee-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
+    .footer-links {
+      display: flex;
+      gap: 1rem;
+      list-style: none;
+    }
+    .footer-links a {
+      font-family: var(--mono);
       font-size: 0.6875rem;
       color: var(--fg-3);
-      text-decoration: underline;
-      text-underline-offset: 3px;
-      font-family: var(--mono);
-      transition: color 0.2s ease, transform 0.2s ease;
-      padding-block: 0.25rem;
+      text-decoration: none;
+      transition: color 0.2s;
     }
-    .coffee-link:hover {
-      color: var(--fg-2);
-      transform: translateY(-1px);
-    }
-    .coffee-link:hover .coffee-icon {
-      transform: translateZ(0) rotate(-15deg) scale(1.1);
-    }
-
-    .coffee-icon {
-      display: inline-block;
-      transition: transform 0.3s ease;
-      transform: translateZ(0);
-      will-change: transform;
-    }
+    .footer-links a:hover { color: var(--fg); }
 
     /* ── Responsive ── */
+    @media (max-width: 600px) {
+      .hero { grid-template-columns: 1fr; gap: 1.25rem; }
+      .hero picture { order: -1; }
+      .hero-photo { width: 88px; height: 88px; border-radius: 14px; margin-top: 0; }
+      .repo { grid-template-columns: 1fr; gap: 0.25rem; }
+      .repo .tag { justify-self: start; }
+    }
+
     @media (max-width: 480px) {
       .site-header, .site-footer { padding-inline: 1rem; }
       .header-links { display: none; }
       main { padding: 2.5rem 1rem 4rem; }
-      .hero { margin-bottom: 2.5rem; }
-      .projects-grid { grid-template-columns: 1fr; }
+      section { margin-bottom: 3rem; }
+      .cards { grid-template-columns: 1fr; }
+      .contact-card { padding: 1.25rem; }
     }
 
     @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
       *, *::before, *::after {
         animation-duration: 0.01ms !important;
         transition-duration: 0.01ms !important;
@@ -341,132 +453,203 @@
 <body>
 
   <header class="site-header">
-    <span class="wordmark">jeremiah<span>.fyi</span></span>
-    <nav>
+    <a class="wordmark" href="/">jeremiah <span>anderson</span></a>
+    <nav aria-label="Site">
       <ul class="header-links">
+        <li><a href="#services">services</a></li>
+        <li><a href="#work">work</a></li>
+        <li><a href="/Jeremiah-Anderson-Resume.pdf" target="_blank" rel="noopener">resume</a></li>
         <li><a href="mailto:andermiah@gmail.com">email</a></li>
-        <li><a href="https://github.com/andermiah" target="_blank" rel="noopener">github</a></li>
-        <li><a href="https://www.linkedin.com/in/jeremiah-anderson-8a58b4362" target="_blank" rel="noopener">linkedin</a></li>
       </ul>
     </nav>
   </header>
 
   <main>
 
-    <section class="hero">
-      <div class="eyebrow">
-        <div class="eyebrow-dot"></div>
-        Full-Stack Engineer
+    <section class="hero" aria-label="Introduction">
+      <div>
+        <div class="eyebrow">
+          <div class="eyebrow-dot"></div>
+          Available for projects
+        </div>
+        <h1>I build websites and web apps for small businesses.</h1>
+        <p class="bio">
+          I'm Jeremiah Anderson, a full-stack developer in the Louisville, KY area.
+          I built and run <a href="https://app.coachm.pro/demo" target="_blank" rel="noopener">Coachm</a>,
+          a Rails app for private sports coaches that handles clients, scheduling, session logs and
+          Stripe subscriptions, and I'm finishing a computer science degree at IU Southeast.
+          If you need a fast site, an app with logins and payments, or help with one you already
+          have, email me.
+        </p>
+        <div class="actions">
+          <a class="btn btn-primary" href="mailto:andermiah@gmail.com?subject=Project%20inquiry">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect width="20" height="16" x="2" y="4" rx="2"/>
+              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+            </svg>
+            andermiah@gmail.com
+          </a>
+          <a class="btn" href="/Jeremiah-Anderson-Resume.pdf" target="_blank" rel="noopener">Resume</a>
+          <div class="icon-links">
+            <a href="https://github.com/andermiah" target="_blank" rel="noopener" aria-label="GitHub">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/>
+              </svg>
+            </a>
+            <a href="https://www.linkedin.com/in/jeremiah-anderson-8a58b4362" target="_blank" rel="noopener" aria-label="LinkedIn">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+              </svg>
+            </a>
+          </div>
+        </div>
       </div>
-      <h1>Jeremiah Anderson</h1>
-      <p class="bio">
-        An avid learner, eager to pick up new skills to solve new problems in new ways.
-        Love digging into code and seeing real-time progress and improvement.
-        Enjoy working with others to reach collaborative goals.
-      </p>
-      <div class="contact-links">
-        <a class="contact-link" href="mailto:andermiah@gmail.com">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <rect width="20" height="16" x="2" y="4" rx="2"/>
-            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
-          </svg>
-          andermiah@gmail.com
-        </a>
-        <a class="contact-link" href="https://github.com/andermiah" target="_blank" rel="noopener">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/>
-          </svg>
-          github
-        </a>
-        <a class="contact-link" href="https://www.linkedin.com/in/jeremiah-anderson-8a58b4362" target="_blank" rel="noopener">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-          </svg>
-          linkedin
-        </a>
+      <picture>
+        <source type="image/webp" srcset="/img/jeremiah-256.webp 1x, /img/jeremiah-512.webp 2x">
+        <img class="hero-photo" src="/img/jeremiah-256.jpg" srcset="/img/jeremiah-256.jpg 1x, /img/jeremiah-512.jpg 2x" width="136" height="136" alt="Jeremiah Anderson">
+      </picture>
+    </section>
+
+    <section id="services" aria-labelledby="services-label">
+      <p class="section-label" id="services-label">Services</p>
+      <div class="cards">
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-name">Websites</span>
+          </div>
+          <p class="card-desc">
+            A fast site for a business, club or team: the pages, the design, a contact form,
+            hosting and domain setup, and the basics of showing up in search. I also move sites
+            off Wix and Squarespace.
+          </p>
+          <div class="tags">
+            <span class="tag">HTML/CSS</span>
+            <span class="tag">Hosting</span>
+            <span class="tag">Forms</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-name">Web apps</span>
+          </div>
+          <p class="card-desc">
+            Custom software with logins, roles, billing and dashboards, built on Ruby on Rails
+            and PostgreSQL and hosted on Fly.io. Stripe for subscriptions and one-off payments,
+            and a mobile version that installs on a phone without an app store.
+          </p>
+          <div class="tags">
+            <span class="tag">Rails</span>
+            <span class="tag">PostgreSQL</span>
+            <span class="tag">Stripe</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-name">Fixes and updates</span>
+          </div>
+          <p class="card-desc">
+            New pages, features and fixes on a site or app you already have, whether I built it
+            or someone else did.
+          </p>
+          <div class="tags">
+            <span class="tag">Rails</span>
+            <span class="tag">HTML/CSS</span>
+            <span class="tag">JS</span>
+          </div>
+        </div>
+
       </div>
     </section>
 
-    <section>
-      <p class="section-label">Projects</p>
-      <div class="projects-grid">
+    <section id="work" aria-labelledby="work-label">
+      <p class="section-label" id="work-label">Selected work</p>
+      <div class="cards cards-single">
 
-        <a class="project-card" href="https://app.coachm.pro" target="_blank" rel="noopener">
-          <div class="project-header">
-            <span class="project-name">Coachm</span>
-            <span class="project-arrow">↗</span>
+        <a class="card" href="https://app.coachm.pro/demo" target="_blank" rel="noopener">
+          <div class="card-header">
+            <span class="card-name">Coachm</span>
+            <span class="card-arrow">↗</span>
           </div>
-          <p class="project-desc">
-            Multi-tenant sports coaching management platform. Teams, training sessions, analytics, and subscriptions, all in one place.
+          <p class="card-desc">
+            Coaching management platform for private sports coaches: clients, scheduling,
+            session logs, analytics and subscription billing. Built alone and run since 2023.
           </p>
-          <div class="project-tags">
+          <div class="tags">
             <span class="tag">Rails 8</span>
             <span class="tag">PostgreSQL</span>
             <span class="tag">Stripe</span>
             <span class="tag">Fly.io</span>
+            <span class="tag">PWA</span>
           </div>
         </a>
 
-        <a class="project-card" href="https://andermiah.github.io/linkin/" target="_blank" rel="noopener">
-          <div class="project-header">
-            <span class="project-name">Linkin</span>
-            <span class="project-arrow">↗</span>
-          </div>
-          <p class="project-desc">
-            Bundle multiple URLs into a single shareable link. One click opens all the tabs. No account, no server, no tracking.
+      </div>
+
+      <p class="section-label sub-label">Open source</p>
+      <ul class="repo-list">
+        <li class="repo">
+          <a class="repo-name" href="https://andermiah.github.io/linkin/" target="_blank" rel="noopener">Linkin</a>
+          <span class="repo-desc">Bundle several URLs into one shareable link. One click opens all the tabs. No account, no server, no tracking.</span>
+          <span class="tag">JS</span>
+        </li>
+        <li class="repo">
+          <a class="repo-name" href="https://andermiah.github.io/echo/" target="_blank" rel="noopener">Echo</a>
+          <span class="repo-desc">Live captions in the browser, powered by the Web Speech API. Speak and see your words in real time.</span>
+          <span class="tag">Web Speech API</span>
+        </li>
+        <li class="repo">
+          <a class="repo-name" href="https://github.com/andermiah/blockness-monster" target="_blank" rel="noopener">Blockness Monster</a>
+          <span class="repo-desc">A small blockchain in Go. Run several nodes on a local network and they form a peer-to-peer chain over HTTP.</span>
+          <span class="tag">Go</span>
+        </li>
+      </ul>
+    </section>
+
+    <section id="about" aria-labelledby="about-label">
+      <p class="section-label" id="about-label">About</p>
+      <div class="prose">
+        <p>
+          I'm a computer science student at Indiana University Southeast (BS, May 2028, 3.97 GPA,
+          minor in entrepreneurship), and I've coached and refereed youth soccer since 2018.
+          Coachm came out of that coaching.
+        </p>
+        <p>
+          I work in Ruby on Rails, PostgreSQL, JavaScript and plain HTML and CSS, and I use
+          Claude Code for agentic coding. Alongside client work I'm open to a summer 2027
+          internship and part-time or full-time developer roles. See my
+          <a href="/Jeremiah-Anderson-Resume.pdf" target="_blank" rel="noopener">resume</a>.
+        </p>
+      </div>
+    </section>
+
+    <section id="contact" aria-labelledby="contact-heading">
+      <div class="contact-card">
+        <h2 id="contact-heading">Get in touch</h2>
+        <div class="prose">
+          <p>
+            Email <a href="mailto:andermiah@gmail.com?subject=Project%20inquiry">andermiah@gmail.com</a>
+            with what you're trying to build.
           </p>
-          <div class="project-tags">
-            <span class="tag">HTML</span>
-            <span class="tag">CSS</span>
-            <span class="tag">JS</span>
-          </div>
-        </a>
-
-        <a class="project-card" href="https://andermiah.github.io/echo/" target="_blank" rel="noopener">
-          <div class="project-header">
-            <span class="project-name">Echo</span>
-            <span class="project-arrow">↗</span>
-          </div>
-          <p class="project-desc">
-            Live captions in the browser, powered by the Web Speech API. Speak and see your words in real time.
-          </p>
-          <div class="project-tags">
-            <span class="tag">HTML</span>
-            <span class="tag">Web Speech API</span>
-          </div>
-        </a>
-
-        <a class="project-card" href="https://github.com/andermiah/blockness-monster" target="_blank" rel="noopener">
-          <div class="project-header">
-            <span class="project-name">Blockness Monster</span>
-            <span class="project-arrow">↗</span>
-          </div>
-          <p class="project-desc">
-            A simple blockchain implementation with HTTP networking. Run multiple nodes that form a peer-to-peer chain.
-          </p>
-          <div class="project-tags">
-            <span class="tag">Go</span>
-            <span class="tag">HTTP</span>
-          </div>
-        </a>
-
+        </div>
+        <div class="actions">
+          <a class="btn btn-primary" href="mailto:andermiah@gmail.com?subject=Project%20inquiry">Email me</a>
+          <a class="btn" href="https://www.linkedin.com/in/jeremiah-anderson-8a58b4362" target="_blank" rel="noopener">LinkedIn</a>
+        </div>
       </div>
     </section>
 
   </main>
 
   <footer class="site-footer">
-    <span class="footer-note">jeremiah.fyi</span>
-    <a class="coffee-link" href="https://buymeacoffee.com/andermiah" target="_blank" rel="noopener noreferrer">
-      <svg class="coffee-icon" xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M17 8h1a4 4 0 1 1 0 8h-1"/>
-        <path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/>
-        <line x1="6" x2="6" y1="2" y2="4"/>
-        <line x1="10" x2="10" y1="2" y2="4"/>
-        <line x1="14" x2="14" y1="2" y2="4"/>
-      </svg>
-      buy me a coffee
-    </a>
+    <span class="footer-note">andermiah.github.io</span>
+    <ul class="footer-links">
+      <li><a href="https://github.com/andermiah" target="_blank" rel="noopener">github</a></li>
+      <li><a href="https://www.linkedin.com/in/jeremiah-anderson-8a58b4362" target="_blank" rel="noopener">linkedin</a></li>
+      <li><a href="/Jeremiah-Anderson-Resume.pdf" target="_blank" rel="noopener">resume</a></li>
+    </ul>
   </footer>
 
 </body>
